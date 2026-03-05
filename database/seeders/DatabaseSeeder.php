@@ -70,5 +70,50 @@ public function run(): void {
         'layanan_id' => 1, // Melayani Rekam KTP
         'loket_id' => 1    // Di Loket 1
     ]);
+
+     \App\Models\User::create([
+        'name' => 'Petugas 2',
+        'username' => 'petugas2',
+        'password' => bcrypt('password'),
+        'role' => 'petugas',
+        'layanan_id' => 2, // Melayani Cetak KTP
+        'loket_id' => 2    // Di Loket 2
+    ]);
+
+     \App\Models\User::create([
+        'name' => 'Petugas 3',
+        'username' => 'petugas3',
+        'password' => bcrypt('password'),
+        'role' => 'petugas',
+        'layanan_id' => 3, // Melayani Penuh
+        'loket_id' => 3    // Di Loket 3
+    ]);
+
+     \App\Models\User::create([
+        'name' => 'Petugas 4',
+        'username' => 'petugas4',
+        'password' => bcrypt('password'),
+        'role' => 'petugas',
+        'layanan_id' => 3, // Melayani penuh
+        'loket_id' => 4    // Di Loket 4
+    ]);
+
+     \App\Models\User::create([
+        'name' => 'Petugas 5',
+        'username' => 'petugas5',
+        'password' => bcrypt('password'),
+        'role' => 'petugas',
+        'layanan_id' => 4, // Melayani BAKAK
+        'loket_id' => 5    // Di Loket 5
+    ]);
+
+     \App\Models\User::create([
+        'name' => 'Petugas 6',
+        'username' => 'petugas6',
+        'password' => bcrypt('password'),
+        'role' => 'petugas',
+        'layanan_id' => 5, // Melayani Kematian Tanpa NIK
+        'loket_id' => 6    // Di Loket 6
+    ]);
 }
 }

@@ -13,13 +13,12 @@ class DisplayController extends Controller
     }
 
     public function getDisplayData() {
-        // Menggunakan join agar bisa melakukan sorting berdasarkan kolom di tabel lokets
+        // Kita prioritaskan antrian yang baru saja diupdate (dipanggil)
+        // agar JavaScript mudah mendeteksi perubahan untuk trigger suara
         $data = Queue::with(['layanan', 'loket'])
-            ->join('lokets', 'queues.loket_id', '=', 'lokets.id') // Gabungkan dengan tabel loket
-            ->select('queues.*') // Pastikan hanya mengambil kolom dari tabel queue
-            ->where('queues.status', 'dipanggil')
-            ->whereDate('queues.created_at', Carbon::today())
-            ->orderBy('lokets.nama_loket', 'asc') // URUTKAN BERDASARKAN NAMA LOKET (Loket 1, 2, dst)
+            ->where('status', 'dipanggil')
+            ->whereDate('created_at', Carbon::today())
+            ->orderBy('updated_at', 'desc') // Penting: Yang baru dipanggil muncul di atas
             ->get();
 
         return response()->json($data);

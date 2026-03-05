@@ -11,102 +11,90 @@
 
     <style>
         :root {
-            --bg-dark: #0a0e17;
-            --accent-blue: #4cc9f0;
-            --accent-pink: #f72585;
-            --card-bg: rgba(255, 255, 255, 0.98);
+            --bg-light: #ffffff;
+            --text-main: #0f172a;
+            --accent-blue: #0d6efd;
+            --card-border: #e2e8f0;
+            --header-dark: #1e293b;
         }
 
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: radial-gradient(circle at center, #111827 0%, #030712 100%);
-            color: #fff;
+        body, html {
             height: 100vh;
-            margin: 0;
+            margin: 0; padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-main);
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
 
-        /* HEADER DYNAMIS */
         .header-monitor {
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(15px);
-            padding: 1.5vh 4vw; /* Menggunakan viewport units */
-            border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+            background: #f8fafc;
+            padding: 1.5vh 4vw;
+            border-bottom: 2px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-shrink: 0;
         }
 
-        .title-app {
-            font-weight: 800;
-            font-size: 2rem; /* Skala font menyesuaikan */
-            margin: 0;
-            background: linear-gradient(to right, #fff, var(--accent-blue));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .title-app { font-weight: 800; font-size: clamp(1.2rem, 2.5vw, 2rem); margin: 0; }
+        #clock-time { font-weight: 800; font-size: clamp(1.8rem, 3.5vw, 2.5rem); line-height: 1; }
+        #clock-date { font-size: 0.9rem; color: #64748b; font-weight: 600; }
 
-        .date-container { text-align: right; }
-        #clock-time {
-            display: block;
-            font-weight: 800;
-            font-size: 2.5rem;
-            line-height: 1;
-            color: var(--accent-blue);
-        }
-        #clock-date {
-            font-weight: 600;
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.7);
-            text-transform: uppercase;
-        }
-
-        /* MAIN CONTENT - AUTO SCALE */
         .main-content {
             flex: 1;
-            padding: 2vh 2vw;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            padding: 2vh 2vw;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 30px 30px;
         }
 
         .row-antrian {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 25px;
             width: 100%;
-            height: 100%;
+            max-width: 1600px;
             justify-content: center;
-            align-content: center; /* Memastikan kartu di tengah jika baris sedikit */
         }
 
-        /* KARTU LOKET RESPONSIF */
         .card-loket {
-            background: var(--card-bg);
+            background: #ffffff;
             border-radius: 2rem;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
-            /* Ukuran kartu menyesuaikan jumlah loket (maksimal 4 per baris di monitor besar) */
-            flex: 1 1 calc(25% - 40px); 
-            min-width: 300px;
-            max-height: 80vh; 
+            flex: 0 1 350px; 
             overflow: hidden;
-            border: none;
+            border: 2px solid var(--card-border);
+            transition: transform 0.3s ease;
+        }
+
+        /* Animasi kartu saat sedang dipanggil suaranya */
+        .calling-now {
+            animation: pulse-border 1s infinite;
+            border-color: var(--accent-blue) !important;
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0px rgba(13, 110, 253, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(13, 110, 253, 0); }
+            100% { box-shadow: 0 0 0 0px rgba(13, 110, 253, 0); }
         }
 
         .loket-header {
-            background: #1e293b;
-            color: #fff;
+            background: var(--header-dark);
+            color: #ffffff;
             padding: 1.5vh;
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             font-weight: 800;
             text-align: center;
-            border-bottom: 6px solid var(--accent-blue);
+            text-transform: uppercase;
         }
 
         .card-body {
@@ -114,116 +102,189 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 2vh !important;
-            flex: 1;
+            padding: 3vh 1vh !important;
         }
 
         .nomor-antrian {
-            /* Menggunakan clamp agar teks tidak pecah di laptop dan tetap raksasa di TV */
-            font-size: clamp(5rem, 15vh, 12rem);
+            font-size: clamp(4.5rem, 9vw, 7.5rem);
             font-weight: 900;
-            color: #0f172a;
+            color: var(--accent-blue);
             margin: 0;
             line-height: 1;
-            letter-spacing: -2px;
         }
 
         .layanan-tag {
             background: #f1f5f9;
-            color: #475569;
+            color: #334155;
             padding: 0.8vh 1.5vw;
-            border-radius: 1rem;
-            font-weight: 700;
-            font-size: clamp(1rem, 2vh, 1.5rem);
-            margin-top: 1vh;
-            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 1rem;
+            margin-top: 2vh;
+            border: 1px solid #cbd5e1;
+            width: 90%;
             text-align: center;
         }
 
-        /* FOOTER */
         .footer-bar {
-            background: var(--accent-pink);
-            height: 5vh;
-            min-height: 40px;
+            background: var(--accent-blue);
+            height: 6vh;
             display: flex;
             align-items: center;
             font-size: 1.2rem;
             font-weight: 700;
-            flex-shrink: 0;
+            color: white;
         }
 
-        /* MEDIA QUERIES UNTUK LAPTOP KECIL */
-        @media (max-height: 700px) {
-            .title-app { font-size: 1.5rem; }
-            #clock-time { font-size: 1.8rem; }
-            .loket-header { font-size: 1.4rem; }
-            .nomor-antrian { font-size: clamp(4rem, 20vh, 7rem); }
+        #audio-lock {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            color: white; z-index: 9999;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            cursor: pointer; text-align: center;
         }
     </style>
 </head>
 <body>
 
+    <div id="audio-lock" onclick="enableAudio()">
+        <i class="fas fa-volume-up fa-4x mb-4 text-primary"></i>
+        <h2 class="fw-bold">KLIK DI MANA SAJA</h2>
+        <p>Untuk mengaktifkan suara panggilan otomatis</p>
+    </div>
+
     <header class="header-monitor">
-        <h1 class="title-app">
-            <i class="fas fa-university me-2"></i>PELAYANAN DUKCAPIL
-        </h1>
-        <div class="date-container">
-            <span id="clock-time">00:00:00</span>
-            <span id="clock-date">Memuat Tanggal...</span>
+        <h1 class="title-app"><i class="fas fa-university me-2 text-primary"></i>PELAYANAN DUKCAPIL</h1>
+        <div class="text-end">
+            <div id="clock-time">00:00:00</div>
+            <div id="clock-date">Memuat...</div>
         </div>
     </header>
 
     <main class="main-content">
         <div id="antrian-container" class="row-antrian">
-            <div class="text-center">
-                <div class="spinner-border text-info" style="width: 3rem; height: 3rem;"></div>
             </div>
-        </div>
     </main>
 
     <footer class="footer-bar">
-        <marquee scrollamount="8">
-            &bull; Selamat Datang di Kantor Layanan Dukcapil &bull; Budayakan Mengantri dengan Tertib &bull; Layanan Kami Gratis Tidak Dipungut Biaya &bull;
+        <marquee scrollamount="10">
+            &bull; Selamat Datang di Kantor Layanan Dukcapil &bull; Layanan Kami Cepat, Akurat, dan Gratis &bull; Budayakan Antri Untuk Kenyamanan Bersama &bull;
         </marquee>
     </footer>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        let lastData = "";
+        let lastDataMap = {}; // Menggunakan Map berdasarkan Nama Loket
+        let audioEnabled = false;
+        let speechQueue = [];
+        let isSpeaking = false;
+        let currentCallingLoket = null; 
+
+        const bell = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+
+        function enableAudio() {
+            audioEnabled = true;
+            $('#audio-lock').fadeOut();
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+        }
+
+        function processQueue() {
+            if (isSpeaking || speechQueue.length === 0) return;
+
+            isSpeaking = true;
+            const item = speechQueue.shift();
+            currentCallingLoket = item.loket; // Tandai loket mana yang sedang bunyi
+
+            // Update UI segera agar kartu berkedip
+            renderUI(lastRawData);
+
+            bell.play().catch(e => console.log("Audio play blocked"));
+
+            setTimeout(() => {
+                const nomorEja = item.nomor.split('').join(', ');
+                const teks = `Nomor antrian, ${nomorEja}, silakan menuju ke, ${item.loket}`;
+                
+                const utter = new SpeechSynthesisUtterance(teks);
+                utter.lang = 'id-ID';
+                utter.rate = 0.85;
+                utter.pitch = 1.1;
+
+                utter.onend = function() {
+                    isSpeaking = false;
+                    currentCallingLoket = null;
+                    renderUI(lastRawData); // Hapus efek berkedip
+                    setTimeout(processQueue, 1000);
+                };
+
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utter);
+            }, 1300);
+        }
+
+        let lastRawData = [];
 
         function updateDisplay() {
             $.get('/api/display-data', function(data) {
-                let currentDataString = JSON.stringify(data);
-                if (currentDataString === lastData) return;
-                lastData = currentDataString;
+                if (!data) return;
+                lastRawData = data;
 
-                let html = '';
-                data.forEach(q => {
-                    html += `
-                    <div class="card-loket">
-                        <div class="loket-header">${q.loket.nama_loket.toUpperCase()}</div>
-                        <div class="card-body">
-                            <div class="nomor-antrian">${q.nomor_antrian}</div>
-                            <div class="layanan-tag">${q.layanan.nama_layanan}</div>
-                        </div>
-                    </div>`;
+                data.forEach(item => {
+                    const loketKey = item.loket.nama_loket;
+                    const nomorSekarang = item.nomor_antrian;
+
+                    // CEK PERUBAHAN: Jika loket ini ada di data sebelumnya tapi nomornya beda
+                    if (lastDataMap[loketKey] && lastDataMap[loketKey] !== nomorSekarang) {
+                        speechQueue.push({ nomor: nomorSekarang, loket: loketKey });
+                        processQueue();
+                    }
+                    
+                    // Update referensi terakhir
+                    lastDataMap[loketKey] = nomorSekarang;
                 });
 
-                if(data.length === 0) {
-                    html = `<h1 style="opacity:0.2; font-size:4rem; font-weight:800;">BELUM ADA ANTRIAN</h1>`;
-                }
-
-                $('#antrian-container').html(html);
+                renderUI(data);
             });
         }
 
-        setInterval(updateDisplay, 3000);
-        updateDisplay();
+        function renderUI(data) {
+            let html = '';
+            if(data.length === 0) {
+                html = `<div class="text-center text-muted"><h2>BELUM ADA ANTRIAN AKTIF</h2></div>`;
+            } else {
+                data.forEach(q => {
+                    // Tambahkan class calling-now jika loket ini yang sedang bersuara
+                    const activeClass = (q.loket.nama_loket === currentCallingLoket) ? 'calling-now' : '';
+                    
+                    html += `
+                    <div class="card-loket ${activeClass}">
+                        <div class="loket-header">${q.loket.nama_loket}</div>
+                        <div class="card-body">
+                            <div class="nomor-antrian">${q.nomor_antrian}</div>
+                            <div class="layanan-tag">${q.layanan.nama_layanan.toUpperCase()}</div>
+                        </div>
+                    </div>`;
+                });
+            }
+            $('#antrian-container').html(html);
+        }
 
+        // Jalankan polling 3 detik
+        setInterval(updateDisplay, 3000);
+        
+        // Load awal (Tanpa Bunyi)
+        $.get('/api/display-data', function(data) {
+            data.forEach(item => {
+                lastDataMap[item.loket.nama_loket] = item.nomor_antrian;
+            });
+            renderUI(data);
+        });
+
+        // Jam
         setInterval(() => {
             const now = new Date();
-            $('#clock-time').text(now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }));
-            $('#clock-date').text(now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+            $('#clock-time').text(now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false }).replace(/\./g, ':'));
+            $('#clock-date').text(now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' }));
         }, 1000);
     </script>
 </body>

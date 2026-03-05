@@ -140,82 +140,16 @@
     </div>
 </div>
 
-{{-- SCRIPT REALTIME & SUARA --}}
+{{-- SCRIPT REALTIME SAJA --}}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        
-        // 1. LOGIKA REALTIME LISTENER (Laravel Echo)
+        // Hanya logika Realtime Listener (Laravel Echo)
         if (typeof Echo !== 'undefined') {
             Echo.channel('antrian-channel')
                 .listen('.update.antrian', (e) => {
-                    // Refresh halaman otomatis agar data paling akurat
-                    // Atau gunakan fetch API jika ingin lebih smooth tanpa reload
                     window.location.reload();
                 });
         }
-
-        // 2. LOGIKA SUARA WANITA OPTIMASI MANUSIA
-        @if(session('panggil_suara'))
-            const nomorAsli = "{{ session('panggil_suara') }}";
-            const loket = "{{ session('nomor_loket') }}";
-            
-            // Mengubah "A001" menjadi "A, 0, 0, 1" agar dibaca per digit secara natural
-            const nomorEja = nomorAsli.split('').join(', ');
-            
-            // Format kalimat dengan jeda titik dan koma yang pas
-            const teks = `Nomor antrian ${nomorEja}. Silahkan menuju ke ${loket}.`;
-            
-            function speak() {
-                const synth = window.speechSynthesis;
-                synth.cancel(); // Hentikan suara lain agar tidak tumpang tindih
-
-                const utterThis = new SpeechSynthesisUtterance(teks);
-                utterThis.lang = 'id-ID';
-                
-                // Kecepatan sedikit melambat agar lebih anggun (manusiawi)
-                utterThis.rate = 0.95; 
-                
-                // Pitch 1.2 membuat karakter suara lebih kewanitaan dan jernih
-                utterThis.pitch = 1.2; 
-
-                // LOGIKA MENCARI SUARA WANITA
-                const voices = synth.getVoices();
-                
-                // 1. Cari suara yang mengandung kata 'Female', 'Gadis', 'Indah', atau 'Natural'
-                let selectedVoice = voices.find(voice => 
-                    voice.lang.includes('id') && 
-                    (voice.name.toLowerCase().includes('female') || 
-                     voice.name.toLowerCase().includes('gadis') || 
-                     voice.name.toLowerCase().includes('indah') ||
-                     voice.name.toLowerCase().includes('natural'))
-                );
-
-                // 2. Jika tidak ketemu, cari suara Google Bahasa Indonesia
-                if (!selectedVoice) {
-                    selectedVoice = voices.find(voice => 
-                        voice.name.includes('Google Bahasa Indonesia')
-                    );
-                }
-
-                // 3. Jika masih tidak ketemu, ambil suara Indonesia apa saja
-                if (!selectedVoice) {
-                    selectedVoice = voices.find(voice => voice.lang.includes('id'));
-                }
-
-                if (selectedVoice) {
-                    utterThis.voice = selectedVoice;
-                }
-
-                synth.speak(utterThis);
-            }
-
-            if ('speechSynthesis' in window) {
-                if (window.speechSynthesis.onvoiceschanged !== undefined) {
-                    window.speechSynthesis.onvoiceschanged = speak;
-                }
-                setTimeout(speak, 800);
-            }
-        @endif
     });
 </script>
 @endsection
