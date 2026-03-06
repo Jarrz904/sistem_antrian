@@ -41,12 +41,74 @@
             box-shadow: 0 6px 15px rgba(0,0,0,0.1);
         }
 
+        /* --- PERBAIKAN HERO SECTION BERWARNA --- */
         .hero-section {
-            padding: 80px 0 40px;
-            background: linear-gradient(135deg, #ffffff 0%, #eef2f7 100%);
-            border-bottom: 1px solid #e0e6ed;
-            margin-bottom: 40px;
+            padding: 100px 0 80px;
+            /* Menggunakan Gradient Berwarna Modern */
+            background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+            position: relative;
+            overflow: hidden;
+            color: white;
+            margin-bottom: 50px;
+            clip-path: ellipse(150% 100% at 50% 0%); /* Memberikan efek lengkungan halus di bawah */
         }
+
+        /* Dekorasi Lingkaran Cahaya */
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            bottom: -100px;
+            left: -50px;
+            width: 250px;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .hero-title {
+            font-weight: 800;
+            letter-spacing: -1px;
+            /* Mengatur ukuran font responsif untuk monitor */
+            font-size: clamp(2.5rem, 5vw, 4.5rem); 
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .hero-subtitle {
+            font-weight: 400;
+            font-size: clamp(1.1rem, 1.5vw, 1.4rem);
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .hero-badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            color: #fff;
+            padding: 8px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        /* --- END HERO SECTION --- */
 
         .card-layanan {
             border: none;
@@ -137,8 +199,11 @@
 
 <div class="hero-section text-center">
     <div class="container">
-        <h1 class="display-5 fw-800 mb-2">Pilih Jenis Layanan</h1>
-        <p class="lead text-muted px-md-5">Silahkan pilih kategori layanan di bawah ini untuk mendapatkan nomor urut pelayanan Anda.</p>
+        <div class="hero-badge">Portal Layanan Publik</div>
+        <h1 class="hero-title">Pilih Jenis Layanan</h1>
+        <p class="hero-subtitle">
+            Selamat datang! Silahkan pilih kategori layanan yang Anda butuhkan di bawah ini untuk mendapatkan nomor urut pelayanan secara otomatis.
+        </p>
     </div>
 </div>
 
