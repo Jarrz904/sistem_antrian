@@ -16,38 +16,43 @@ class DatabaseSeeder extends Seeder
    // DatabaseSeeder.php
 public function run(): void {
     // 1. Seed Layanan
-   $layanans = [
-    [
-        'nama_layanan' => 'Pelayanan Rekam KTP', 
-        'prefix' => 'A', 
-        'is_nik_required' => true, 
-        'icon' => 'fas fa-camera-retro' // Ikon kamera untuk rekam
-    ],
-    [
-        'nama_layanan' => 'Pelayanan Cetak KTP', 
-        'prefix' => 'B', 
-        'is_nik_required' => true, 
-        'icon' => 'fas fa-print' // Ikon printer untuk cetak
-    ],
-    [
-        'nama_layanan' => 'Pelayanan Penuh', 
-        'prefix' => 'C', 
-        'is_nik_required' => true, 
-        'icon' => 'fas fa-star' // Ikon bintang untuk layanan penuh
-    ],
-    [
-        'nama_layanan' => 'Pelayanan BAKAK', 
-        'prefix' => 'D', 
-        'is_nik_required' => true, 
-        'icon' => 'fas fa-file-alt' // Ikon dokumen untuk BAKAK
-    ],
-    [
-        'nama_layanan' => 'Pelayanan Kematian Tanpa NIK', 
-        'prefix' => 'E', 
-        'is_nik_required' => false, 
-        'icon' => 'fas fa-user-times' // Ikon monumen/nisan untuk kematian
-    ],
-];
+  $layanans = [
+        [
+            'nama_layanan' => 'Pelayanan Rekam KTP', 
+            'prefix' => 'A', 
+            'is_nik_required' => true, 
+            'icon' => 'fas fa-camera-retro',
+            'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan Rekam KTP.'
+        ],
+        [
+            'nama_layanan' => 'Pelayanan KTP dan KIA', 
+            'prefix' => 'B', 
+            'is_nik_required' => true, 
+            'icon' => 'fas fa-print',
+            'deskripsi' => 'Cetak KTP dan KIA,Perekaman Ulang, Tanda tangan Ulang.'
+        ],
+        [
+            'nama_layanan' => 'Pelayanan Adminduk', 
+            'prefix' => 'C', 
+            'is_nik_required' => true, 
+            'icon' => 'fas fa-star',
+            'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan Adminduk.'
+        ],
+        [
+            'nama_layanan' => 'Pelayanan BAKAK', 
+            'prefix' => 'D', 
+            'is_nik_required' => true, 
+            'icon' => 'fas fa-file-alt',
+            'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan BAKAK.'
+        ],
+        [
+            'nama_layanan' => 'Pelayanan Pencatatan Sipil Khusus', 
+            'prefix' => 'E', 
+            'is_nik_required' => false, 
+            'icon' => 'fas fa-user-times',
+            'deskripsi' => 'Akte kematian tanpa NIK,Perkawinan Non Muslim dan Perceraian Non Muslim.'
+        ],
+    ];
     foreach($layanans as $l) \App\Models\Layanan::create($l);
 
     // 2. Seed Loket
@@ -76,7 +81,7 @@ public function run(): void {
         'username' => 'petugas2',
         'password' => bcrypt('password'),
         'role' => 'petugas',
-        'layanan_id' => 2, // Melayani Cetak KTP
+        'layanan_id' => 2, // Melayani KTP dan KIA
         'loket_id' => 2    // Di Loket 2
     ]);
 
@@ -85,7 +90,7 @@ public function run(): void {
         'username' => 'petugas3',
         'password' => bcrypt('password'),
         'role' => 'petugas',
-        'layanan_id' => 3, // Melayani Penuh
+        'layanan_id' => 3, // Melayani Adminduk
         'loket_id' => 3    // Di Loket 3
     ]);
 
@@ -94,7 +99,7 @@ public function run(): void {
         'username' => 'petugas4',
         'password' => bcrypt('password'),
         'role' => 'petugas',
-        'layanan_id' => 3, // Melayani penuh
+        'layanan_id' => 3, // Melayani Adminduk
         'loket_id' => 4    // Di Loket 4
     ]);
 
@@ -103,7 +108,7 @@ public function run(): void {
         'username' => 'petugas5',
         'password' => bcrypt('password'),
         'role' => 'petugas',
-        'layanan_id' => 4, // Melayani BAKAK
+        'layanan_id' => 3, // Melayani Adminduk
         'loket_id' => 5    // Di Loket 5
     ]);
 
@@ -112,8 +117,16 @@ public function run(): void {
         'username' => 'petugas6',
         'password' => bcrypt('password'),
         'role' => 'petugas',
-        'layanan_id' => 5, // Melayani Kematian Tanpa NIK
+        'layanan_id' => 4, // Melayani BAKAK
         'loket_id' => 6    // Di Loket 6
+    ]);
+     \App\Models\User::create([
+        'name' => 'Petugas 7',
+        'username' => 'petugas7',
+        'password' => bcrypt('password'),
+        'role' => 'petugas',
+        'layanan_id' => 5, // Melayani Pencatatan Sipil Khusus
+        'loket_id' => 7    // Di Loket 7
     ]);
 }
 }

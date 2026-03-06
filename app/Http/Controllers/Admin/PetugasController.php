@@ -15,6 +15,7 @@ class PetugasController extends Controller
      */
     public function index()
     {
+        // Mengambil user dengan role petugas beserta relasi loket dan layanannya
         $petugas = User::where('role', 'petugas')->with(['loket', 'layanan'])->get();
         $lokets = Loket::all();
         $layanans = Layanan::all();
@@ -71,6 +72,7 @@ class PetugasController extends Controller
             'updated_at' => Carbon::now('Asia/Jakarta'),
         ];
 
+        // Update password hanya jika diisi
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
         }
@@ -85,6 +87,7 @@ class PetugasController extends Controller
      */
     public function destroy($id)
     {
+        // Mencari petugas dan menghapusnya
         User::findOrFail($id)->delete();
         return back()->with('success', 'Akun petugas telah dihapus.');
     }
@@ -94,6 +97,7 @@ class PetugasController extends Controller
      */
     public function exportMasyarakat()
     {
+        // Ambil semua data antrian beserta relasinya
         $data = Queue::with(['layanan', 'user', 'loket'])->orderBy('created_at', 'desc')->get();
         
         $filename = "laporan_antrian_" . Carbon::now('Asia/Jakarta')->format('Ymd_Hi') . ".csv";
@@ -109,10 +113,10 @@ class PetugasController extends Controller
         $callback = function() use ($data) {
             $handle = fopen('php://output', 'w');
             
-            // Tambahkan BOM agar Excel tidak berantakan
+            // Tambahkan BOM (Byte Order Mark) agar karakter UTF-8 (seperti simbol) terbaca benar di Excel
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
             
-            // Header sesuai permintaan: No antrian, Nama, NIK, Layanan, Waktu daftar, loket, petugas, status
+            // Header Kolom CSV
             fputcsv($handle, [
                 'No. Antrian', 
                 'Nama Pemohon', 
@@ -127,12 +131,13 @@ class PetugasController extends Controller
             foreach ($data as $row) {
                 $waktu = Carbon::parse($row->created_at)->timezone('Asia/Jakarta');
                 
+                // Menulis baris data
                 fputcsv($handle, [
                     $row->nomor_antrian,
                     $row->nama_pendaftar,
-                    "'" . $row->nik, // Menjaga NIK agar tidak jadi angka ilmiah di Excel
+                    "\t" . $row->nik, // Menggunakan tab atau petik untuk mencegah Excel mengubah NIK jadi angka scientific
                     $row->layanan->nama_layanan ?? '-',
-                    $waktu->translatedFormat('d F Y') . ' ' . $waktu->format('H:i'), // Waktu Daftar Digabung
+                    $waktu->translatedFormat('d F Y') . ' ' . $waktu->format('H:i'), 
                     $row->loket->nama_loket ?? '-',
                     $row->user->name ?? 'Belum Diproses',
                     ucfirst($row->status)
@@ -145,11 +150,12 @@ class PetugasController extends Controller
     }
 
     /**
-     * Update Nama Loket (Opsional jika diperlukan admin)
+     * Update Nama Loket (Opsional)
      */
     public function updateLoket(Request $request, $id)
     {
         $request->validate(['nama_loket' => 'required|string|max:50']);
+        
         $loket = Loket::findOrFail($id);
         $loket->update([
             'nama_loket' => $request->nama_loket,

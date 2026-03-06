@@ -10,14 +10,13 @@ use Illuminate\Support\Carbon;
 class AntrianController extends Controller
 {
     /**
-     * Tampilan Dashboard Petugas
+     * Tampilan Dashboard Petugas & API Data Realtime
      */
-    public function index() {
+    public function index(Request $request) {
         $user = auth()->user();
-        // Mengambil tanggal hari ini berdasarkan zona waktu Jakarta
         $today = Carbon::now('Asia/Jakarta')->toDateString();
 
-        // 1. Ambil antrian MENUNGGU spesifik layanan petugas hari ini
+        // 1. Ambil antrian MENUNGGU hari ini (untuk layanan yang sama dengan petugas)
         $antrian = Queue::where('status', 'menunggu')
             ->where('layanan_id', $user->layanan_id)
             ->whereDate('created_at', $today) 
@@ -25,7 +24,7 @@ class AntrianController extends Controller
             ->with('layanan')
             ->get();
 
-        // 2. Ambil antrian DILEWATI hari ini
+        // 2. Ambil antrian DILEWATI hari ini (untuk layanan yang sama)
         $skipped = Queue::where('status', 'lewat')
             ->where('layanan_id', $user->layanan_id)
             ->whereDate('created_at', $today)
@@ -33,18 +32,29 @@ class AntrianController extends Controller
             ->with('layanan')
             ->get();
             
-        // 3. Ambil antrian yang SEDANG DIPROSES oleh petugas ini hari ini
+        // 3. Ambil antrian yang SEDANG DIPROSES oleh petugas ini secara spesifik
         $current = Queue::where('user_id', $user->id)
             ->where('status', 'dipanggil')
             ->whereDate('created_at', $today)
             ->with(['layanan', 'loket'])
             ->first();
 
+        // JIKA REQUEST ADALAH AJAX (untuk update realtime tanpa reload halaman)
+        if ($request->ajax()) {
+            return response()->json([
+                'antrian' => $antrian,
+                'skipped' => $skipped,
+                'count'   => $antrian->count(),
+                // Opsional: kirim ID antrian yang sedang dipanggil petugas lain 
+                // agar tabel sinkron jika ada data yang mendadak hilang dari list
+            ]);
+        }
+
         return view('petugas.dashboard', compact('antrian', 'current', 'skipped'));
     }
 
     /**
-     * Panggil Antrian Berikutnya
+     * Panggil Antrian Berikutnya (Lanjutkan Pelayanan)
      */
     public function panggil(Request $request) {
         $user = auth()->user();
@@ -52,20 +62,20 @@ class AntrianController extends Controller
         $today = $now->toDateString();
 
         if (!$user->layanan_id) {
-            return back()->with('error', 'Akun Anda belum dikaitkan dengan jenis layanan apapun.');
+            return back()->with('error', 'Akun Anda belum dikaitkan dengan layanan.');
         }
 
-        // Validasi: Cek apakah petugas masih memiliki antrian aktif (status dipanggil)
-        $isBusy = Queue::where('user_id', $user->id)
+        // Selesaikan antrian aktif sebelumnya jika ada (Auto-complete)
+        $activeQueue = Queue::where('user_id', $user->id)
             ->where('status', 'dipanggil')
             ->whereDate('created_at', $today)
-            ->exists();
+            ->first();
 
-        if ($isBusy) {
-            return back()->with('error', 'Selesaikan antrian yang sedang aktif terlebih dahulu.');
+        if ($activeQueue) {
+            $activeQueue->update(['status' => 'selesai']);
         }
 
-        // Cari nomor antrian tertua yang masih menunggu hari ini
+        // Ambil nomor antrian pertama dalam daftar tunggu
         $q = Queue::where('status', 'menunggu')
             ->where('layanan_id', $user->layanan_id)
             ->whereDate('created_at', $today)
@@ -77,7 +87,7 @@ class AntrianController extends Controller
                 'status'     => 'dipanggil', 
                 'loket_id'   => $user->loket_id,
                 'user_id'    => $user->id,
-                'updated_at' => $now // Memastikan jam panggil sesuai waktu Jakarta
+                'updated_at' => $now 
             ]);
 
             return back()->with([
@@ -87,7 +97,7 @@ class AntrianController extends Controller
             ]);
         }
         
-        return back()->with('error', 'Antrian sudah habis.');
+        return back()->with('info', 'Antrian sudah habis dikerjakan.');
     }
 
     /**
@@ -96,18 +106,27 @@ class AntrianController extends Controller
     public function panggilUlang($id) {
         $user = auth()->user();
         $now = Carbon::now('Asia/Jakarta');
+        $today = $now->toDateString();
         
         $q = Queue::where('id', $id)->firstOrFail();
 
-        // Jika dipanggil dari daftar 'lewat', kembalikan status ke 'dipanggil'
-        if ($q->status == 'lewat') {
-            $q->update([
-                'status'     => 'dipanggil',
-                'user_id'    => $user->id,
-                'loket_id'   => $user->loket_id,
-                'updated_at' => $now
-            ]);
+        // Validasi: Jangan panggil ulang jika petugas sedang melayani nomor LAIN yang aktif
+        $activeOther = Queue::where('user_id', $user->id)
+            ->where('status', 'dipanggil')
+            ->whereDate('created_at', $today)
+            ->where('id', '!=', $id)
+            ->exists();
+
+        if ($activeOther) {
+            return back()->with('error', 'Selesaikan antrian aktif Anda terlebih dahulu.');
         }
+
+        $q->update([
+            'status'     => 'dipanggil',
+            'user_id'    => $user->id,
+            'loket_id'   => $user->loket_id,
+            'updated_at' => $now
+        ]);
 
         return back()->with([
             'panggil_suara' => $q->nomor_antrian,
@@ -118,12 +137,15 @@ class AntrianController extends Controller
 
     /**
      * Aksi Selesai atau Lewati
+     * Digunakan untuk mengubah status antrian yang sedang aktif
      */
     public function aksi($id, $status) {
         $now = Carbon::now('Asia/Jakarta');
         $user = auth()->user();
 
+        // Pastikan status yang dikirim valid
         if (in_array($status, ['selesai', 'lewat'])) {
+            // Update antrian berdasarkan ID
             Queue::where('id', $id)
                 ->update([
                     'status'     => $status,
@@ -131,7 +153,7 @@ class AntrianController extends Controller
                     'updated_at' => $now 
                 ]);
             
-            $pesan = $status == 'selesai' ? 'Antrian berhasil diselesaikan.' : 'Antrian ditandai telah dilewati.';
+            $pesan = $status == 'selesai' ? 'Antrian berhasil diselesaikan.' : 'Antrian telah dilewati.';
             return back()->with('success', $pesan);
         }
 

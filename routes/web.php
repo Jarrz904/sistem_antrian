@@ -34,6 +34,7 @@ Route::get('/api/display-data', [DisplayController::class, 'getDisplayData']); /
 Route::get('/login', [LoginController::class, 'index'])->name('login')->middleware('guest');
 Route::post('/login', [LoginController::class, 'login'])->middleware('guest');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
+Route::get('/api/lokets', [DisplayController::class, 'getLokets']);
 
 /*
 |--------------------------------------------------------------------------
@@ -43,15 +44,15 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->midd
 Route::middleware(['auth', 'role:petugas'])->prefix('petugas')->group(function () {
     // Halaman Utama Petugas
     Route::get('/', [AntrianController::class, 'index'])->name('petugas.dashboard');
-    
+
     // Aksi Panggil Antrian Baru
     Route::post('/panggil', [AntrianController::class, 'panggil'])->name('petugas.panggil');
 
-    // Aksi Panggil Ulang (Untuk antrian yang dilewati/skipped)
+    // Aksi Panggil Ulang (Recall)
     Route::post('/panggil-ulang/{id}', [AntrianController::class, 'panggilUlang'])->name('petugas.panggilUlang');
 
-    // Ubah status antrian menjadi 'selesai' atau 'lewat'
-    Route::post('/aksi/{id}/{status}', [AntrianController::class, 'aksi'])->name('petugas.status');
+    // Route Aksi (Selesai/Lewati) - Disinkronkan menjadi 'petugas.aksi' agar sesuai dengan Blade
+    Route::post('/aksi/{id}/{status}', [AntrianController::class, 'aksi'])->name('petugas.aksi');
 });
 
 /*
@@ -76,8 +77,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/antrian', [AdminDashboard::class, 'antrianIndex'])->name('admin.antrian');
     Route::post('/antrian/update/{id}', [AdminDashboard::class, 'updateAntrian'])->name('admin.antrian.update');
     Route::delete('/antrian/delete/{id}', [AdminDashboard::class, 'deleteAntrian'])->name('admin.antrian.delete');
+    
+    // Reset Display & Realtime Stats
+    Route::get('/reset-display', [AdminDashboard::class, 'resetDisplay'])->name('admin.reset-display');
+    Route::get('/realtime-stats', [AdminDashboard::class, 'getRealtimeStats'])->name('admin.realtime-stats');
 
     // --- Fitur Export ---
-    // Menggunakan method exportCSV dari DashboardController agar data sesuai format terbaru
     Route::get('/export-masyarakat', [AdminDashboard::class, 'exportCSV'])->name('admin.export');
 });

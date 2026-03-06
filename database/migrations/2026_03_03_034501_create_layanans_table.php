@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('layanans', function (Blueprint $table) {
             $table->id();
             $table->string('nama_layanan');
+            $table->text('deskripsi')->nullable(); // Tambahkan kolom deskripsi di sini
             $table->string('icon')->nullable();
             $table->char('prefix', 1);
             $table->boolean('is_nik_required')->default(true);

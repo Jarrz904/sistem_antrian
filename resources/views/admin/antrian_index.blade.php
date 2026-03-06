@@ -11,11 +11,61 @@
     </a>
 </div>
 
+{{-- Panel Filter Otomatis --}}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form id="filterForm" action="{{ route('admin.antrian') }}" method="GET" class="row g-3">
+            {{-- Filter Prefix --}}
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted text-uppercase">Prefix</label>
+                <select name="prefix" class="form-select border-0 bg-light" onchange="this.form.submit()">
+                    <option value="">Semua Huruf</option>
+                    @foreach(['A', 'B', 'C', 'D'] as $char)
+                        <option value="{{ $char }}" {{ request('prefix') == $char ? 'selected' : '' }}>{{ $char }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Filter Layanan --}}
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted text-uppercase">Layanan</label>
+                <select name="layanan_id" class="form-select border-0 bg-light" onchange="this.form.submit()">
+                    <option value="">Semua Layanan</option>
+                    @foreach($layanans as $lay)
+                        <option value="{{ $lay->id }}" {{ request('layanan_id') == $lay->id ? 'selected' : '' }}>{{ $lay->nama_layanan }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Filter Petugas Spesifik --}}
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted text-uppercase">Petugas</label>
+                <select name="petugas_id" class="form-select border-0 bg-light" onchange="this.form.submit()">
+                    <option value="">Semua Petugas</option>
+                    @foreach($users as $user)
+                        <option value="{{ $user->id }}" {{ request('petugas_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Filter Rentang Tanggal --}}
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-muted text-uppercase">Waktu Daftar</label>
+                <div class="input-group">
+                    <input type="date" name="tgl_mulai" class="form-control border-0 bg-light" value="{{ request('tgl_mulai') }}" onchange="this.form.submit()">
+                    <span class="input-group-text border-0 bg-light">s/d</span>
+                    <input type="date" name="tgl_selesai" class="form-control border-0 bg-light" value="{{ request('tgl_selesai') }}" onchange="this.form.submit()">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card border-0 shadow-sm mb-5">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-0">
         <h5 class="fw-bold mb-0">Daftar Antrian</h5>
-        {{-- Tombol Export CSV --}}
-        <a href="{{ route('admin.export') }}" class="btn btn-success fw-bold rounded-pill px-4 shadow-sm">
+        {{-- Export CSV mengikuti Filter yang aktif --}}
+        <a href="{{ route('admin.export', request()->query()) }}" class="btn btn-success fw-bold rounded-pill px-4 shadow-sm">
             <i class="fas fa-file-csv me-2"></i> Export Data CSV
         </a>
     </div>
@@ -29,7 +79,7 @@
                         <th>NIK</th>
                         <th>Layanan</th>
                         <th>Waktu Daftar</th>
-                        <th>Petugas & Loket</th> {{-- Kolom Diperbarui --}}
+                        <th>Petugas & Loket</th>
                         <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -47,7 +97,7 @@
                             </div>
                         </td>
                         <td>
-                            @if($q->user_id) {{-- Cek jika sudah ada petugas yang memanggil --}}
+                            @if($q->user_id)
                                 <div class="d-flex flex-column">
                                     <span class="small fw-bold text-dark">
                                         <i class="fas fa-user-tie me-1 text-primary"></i> {{ $q->petugas->name ?? 'Petugas' }}
@@ -63,11 +113,9 @@
                             @endif
                         </td>
                         <td class="text-center">
-                            {{-- Tombol Edit --}}
                             <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEdit{{ $q->id }}">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            {{-- Form Hapus --}}
                             <form action="{{ route('admin.antrian.delete', $q->id) }}" method="POST" class="d-inline">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus data antrian ini?')">
@@ -77,7 +125,7 @@
                         </td>
                     </tr>
 
-                    {{-- Modal Edit per baris --}}
+                    {{-- Modal Edit (Tetap Sama) --}}
                     <div class="modal fade" id="modalEdit{{ $q->id }}" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content border-0 shadow">

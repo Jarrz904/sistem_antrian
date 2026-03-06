@@ -149,12 +149,15 @@
             <div class="card card-layanan shadow-sm h-100 p-4 text-center">
                 <div class="card-body d-flex flex-column">
                     <div class="icon-wrapper">
-                        {{-- Mengambil ikon langsung dari Database (Master Data) --}}
-                        {{-- Jika kolom icon kosong, gunakan fa-file-lines sebagai default --}}
+                        {{-- Mengambil ikon langsung dari Database --}}
                         <i class="{{ $l->icon ?? 'fas fa-file-lines' }} fa-4x"></i>
                     </div>
                     <h3 class="fw-bold mb-3">{{ $l->nama_layanan }}</h3>
-                    <p class="text-muted small mb-4">Pengurusan administrasi kependudukan untuk layanan {{ $l->nama_layanan }}.</p>
+                    
+                    {{-- Deskripsi dinamis dari Database --}}
+                    <p class="text-muted small mb-4">
+                        {{ $l->deskripsi ?? 'Pengurusan administrasi kependudukan untuk layanan ' . $l->nama_layanan . '.' }}
+                    </p>
                     
                     <button type="button" 
                             class="btn btn-primary btn-lg mt-auto rounded-pill fw-bold" 
@@ -186,7 +189,6 @@
                         <input type="text" name="nama" class="form-control form-control-custom" placeholder="Masukkan nama Anda" required>
                     </div>
 
-                    {{-- Kontainer NIK yang bisa disembunyikan jika tidak wajib --}}
                     <div class="mb-4" id="nik_container">
                         <label class="form-label fw-bold">NIK (16 Digit)</label>
                         <input type="number" name="nik" id="input_nik" class="form-control form-control-custom" placeholder="Masukkan 16 digit NIK" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" maxlength="16">
@@ -221,7 +223,6 @@
                     <div class="my-3">
                         <hr>
                         <p class="fw-bold mb-0">{{ session('success_data')['layanan'] }}</p>
-                        {{-- Menampilkan Waktu Jakarta (WIB) --}}
                         <small class="text-muted">{{ session('success_data')['waktu'] }} WIB</small>
                     </div>
                 </div>
@@ -247,7 +248,6 @@
         document.getElementById('selected_layanan_id').value = id;
         document.getElementById('titleLayanan').innerText = 'Daftar ' + nama;
         
-        // Logika Sembunyikan/Tampilkan NIK berdasarkan Master Data
         const nikContainer = document.getElementById('nik_container');
         const inputNik = document.getElementById('input_nik');
         
@@ -257,14 +257,13 @@
         } else {
             nikContainer.style.display = 'none';
             inputNik.removeAttribute('required');
-            inputNik.value = ''; // Kosongkan jika tidak perlu
+            inputNik.value = ''; 
         }
 
         const myModal = new bootstrap.Modal(document.getElementById('modalInputAntrian'));
         myModal.show();
     }
 
-    // Munculkan modal sukses secara otomatis jika ada session
     @if(session('success_data'))
         document.addEventListener('DOMContentLoaded', function() {
             const suksesModal = new bootstrap.Modal(document.getElementById('modalSukses'));

@@ -31,67 +31,72 @@
 
         .header-monitor {
             background: #f8fafc;
-            padding: 1.5vh 4vw;
+            padding: 1vh 4vw;
             border-bottom: 2px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
 
-        .title-app { font-weight: 800; font-size: clamp(1.2rem, 2.5vw, 2rem); margin: 0; }
-        #clock-time { font-weight: 800; font-size: clamp(1.8rem, 3.5vw, 2.5rem); line-height: 1; }
-        #clock-date { font-size: 0.9rem; color: #64748b; font-weight: 600; }
+        .title-app { font-weight: 800; font-size: clamp(1rem, 2vw, 1.8rem); margin: 0; }
+        #clock-time { font-weight: 800; font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1; }
+        #clock-date { font-size: 0.85rem; color: #64748b; font-weight: 600; }
 
         .main-content {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2vh 2vw;
+            padding: 1.5vh;
             background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
             background-size: 30px 30px;
+            overflow: hidden;
         }
 
         .row-antrian {
             display: flex;
             flex-wrap: wrap;
-            gap: 25px;
-            width: 100%;
-            max-width: 1600px;
             justify-content: center;
+            align-content: center;
+            gap: 12px;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            margin: 0 auto;
         }
 
         .card-loket {
             background: #ffffff;
-            border-radius: 2rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
-            flex: 0 1 350px; 
-            overflow: hidden;
             border: 2px solid var(--card-border);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.4s ease;
+            overflow: hidden;
+            min-width: 150px;
         }
 
         .calling-now {
-            animation: pulse-border 1.2s infinite;
+            animation: pulse-border 1.5s infinite;
             border-color: var(--accent-blue) !important;
-            transform: scale(1.08);
+            transform: scale(1.03);
             z-index: 10;
             background-color: #f0f7ff;
         }
 
         @keyframes pulse-border {
-            0% { box-shadow: 0 0 0 0px rgba(13, 110, 253, 0.5); }
-            70% { box-shadow: 0 0 0 25px rgba(13, 110, 253, 0); }
+            0% { box-shadow: 0 0 0 0px rgba(13, 110, 253, 0.6); }
+            70% { box-shadow: 0 0 0 20px rgba(13, 110, 253, 0); }
             100% { box-shadow: 0 0 0 0px rgba(13, 110, 253, 0); }
         }
 
         .loket-header {
             background: var(--header-dark);
             color: #ffffff;
-            padding: 1.5vh;
-            font-size: 1.4rem;
+            padding: 0.8vh;
+            font-size: 1rem;
             font-weight: 800;
             text-align: center;
             text-transform: uppercase;
@@ -102,38 +107,42 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 3vh 1vh !important;
+            padding: 1.5vh 1vh !important;
+            flex: 1;
         }
 
         .nomor-antrian {
-            font-size: clamp(4.5rem, 9vw, 7.5rem);
             font-weight: 900;
             color: var(--accent-blue);
             margin: 0;
             line-height: 1;
+            letter-spacing: -1px;
         }
 
         .layanan-tag {
             background: #f1f5f9;
-            color: #334155;
-            padding: 0.8vh 1.5vw;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 1.1rem;
-            margin-top: 2vh;
+            color: #475569;
+            padding: 0.5vh 1vw;
+            border-radius: 8px;
+            font-weight: 700;
+            margin-top: 1vh;
             border: 1px solid #cbd5e1;
             width: 90%;
             text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .footer-bar {
             background: var(--accent-blue);
-            height: 6vh;
+            height: 5vh;
             display: flex;
             align-items: center;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: white;
+            flex-shrink: 0;
         }
 
         #audio-lock {
@@ -149,10 +158,10 @@
 <body>
 
     <div id="audio-lock" onclick="enableAudio()">
-        <i class="fas fa-volume-up fa-5x mb-4 text-primary animate-bounce"></i>
+        <i class="fas fa-volume-up fa-5x mb-4 text-primary"></i>
         <h1 class="fw-bold display-4">KLIK UNTUK MENGAKTIFKAN</h1>
         <p class="fs-4">Monitor memerlukan izin audio untuk memutar suara antrian</p>
-        <button class="btn btn-primary btn-lg mt-4 px-5 rounded-pill fw-bold">AKTIFKAN SUARA</button>
+        <button class="btn btn-primary btn-lg mt-4 px-5 rounded-pill fw-bold shadow">AKTIFKAN SEKARANG</button>
     </div>
 
     <header class="header-monitor">
@@ -164,9 +173,7 @@
     </header>
 
     <main class="main-content">
-        <div id="antrian-container" class="row-antrian">
-            <div class="spinner-border text-primary" role="status"></div>
-        </div>
+        <div id="antrian-container" class="row-antrian"></div>
     </main>
 
     <footer class="footer-bar">
@@ -177,7 +184,8 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        let lastDataMap = {};
+        // lastTokenMap menyimpan updated_token dari setiap loket untuk deteksi panggil ulang
+        let lastTokenMap = {};
         let lastRawData = [];
         let speechQueue = [];
         let isSpeaking = false;
@@ -186,23 +194,43 @@
 
         const bell = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
 
-        // Fungsi memuat suara (Khusus Chrome/Edge)
         function loadVoices() {
             const voices = window.speechSynthesis.getVoices();
-            // Prioritas 1: Google Bahasa Indonesia (Wanita Jernih)
-            // Prioritas 2: Suara ID lokal apa saja
-            indonesianVoice = voices.find(v => v.name.includes('Indonesian') || v.lang === 'id-ID');
+            indonesianVoice = voices.find(v => v.lang === 'id-ID' && (v.name.includes('Female') || v.name.includes('Google'))) || 
+                             voices.find(v => v.lang === 'id-ID');
         }
 
-        window.speechSynthesis.onvoiceschanged = loadVoices;
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
         loadVoices();
 
         function enableAudio() {
             audioEnabled = true;
             $('#audio-lock').fadeOut();
-            // Pancingan suara kosong agar browser mengizinkan audio kedepannya
             const silent = new SpeechSynthesisUtterance('');
             window.speechSynthesis.speak(silent);
+        }
+
+        function formatEjaan(nomor) {
+            const huruf = nomor.charAt(0);
+            const angkaPart = nomor.substring(1); 
+            const angkaInt = parseInt(angkaPart);
+
+            let ejaanAngka = "";
+
+            if (angkaInt === 0) {
+                ejaanAngka = angkaPart.split('').map(() => 'kosong').join(', ');
+            } else if (angkaPart.startsWith('0')) {
+                const matchNol = angkaPart.match(/^0+/);
+                const jumlahNol = matchNol ? matchNol[0].length : 0;
+                const stringNol = Array(jumlahNol).fill('kosong').join(', ');
+                ejaanAngka = `${stringNol}, ${angkaInt}`;
+            } else {
+                ejaanAngka = angkaInt;
+            }
+
+            return `${huruf}, ${ejaanAngka}`;
         }
 
         function processQueue() {
@@ -211,76 +239,89 @@
             isSpeaking = true;
             const item = speechQueue.shift();
             
-            // Efek visual kartu berkedip
+            // Highlight loket yang sedang dipanggil
             renderUI(lastRawData, item.loket);
 
-            // 1. Putar Bell
-            bell.play().catch(e => console.error("Audio error:", e));
+            bell.play().then(() => {
+                setTimeout(() => {
+                    const nomorEja = formatEjaan(item.nomor);
+                    const teks = `Nomor antrian, ${nomorEja}, silakan menuju ke, ${item.loket}`;
+                    const utter = new SpeechSynthesisUtterance(teks);
+                    utter.lang = 'id-ID';
+                    utter.rate = 0.95; 
+                    utter.pitch = 1.2; 
+                    
+                    if (indonesianVoice) utter.voice = indonesianVoice;
 
-            // 2. Jeda setelah bell baru bicara
-            setTimeout(() => {
-                const nomorEja = item.nomor.split('').join(', ');
-                const teks = `Nomor antrian, ${nomorEja}, silakan menuju ke, ${item.loket}`;
-                
-                const utter = new SpeechSynthesisUtterance(teks);
-                utter.lang = 'id-ID';
-                utter.rate = 0.9;  // Kecepatan natural
-                utter.pitch = 1.2; // Pitch suara wanita sedikit tinggi agar jernih
-                
-                if (indonesianVoice) {
-                    utter.voice = indonesianVoice;
-                }
-
-                utter.onend = function() {
-                    isSpeaking = false;
-                    renderUI(lastRawData, null); // Hapus efek visual
-                    setTimeout(processQueue, 1000); // Jeda antar panggilan
-                };
-
-                window.speechSynthesis.cancel();
-                window.speechSynthesis.speak(utter);
-            }, 1500);
+                    utter.onend = function() {
+                        isSpeaking = false;
+                        renderUI(lastRawData, null); 
+                        setTimeout(processQueue, 1500);
+                    };
+                    window.speechSynthesis.speak(utter);
+                }, 1200);
+            }).catch(() => { isSpeaking = false; });
         }
 
         function updateDisplay() {
-            $.get('/api/display-data', function(data) {
-                if (!data) return;
-                lastRawData = data;
+            $.get('/api/display-data')
+            .done(function(data) {
+                if (!data || data.length === 0) return;
+                let hasNewCall = false;
 
                 data.forEach(item => {
                     const loketKey = item.loket.nama_loket;
                     const nomorSekarang = item.nomor_antrian;
+                    const tokenSekarang = item.updated_token; // Token unik (timestamp) dari backend
 
-                    // Deteksi perubahan nomor pada loket yang sama
-                    if (lastDataMap[loketKey] !== undefined && lastDataMap[loketKey] !== nomorSekarang) {
-                        if (audioEnabled) {
-                            speechQueue.push({ nomor: nomorSekarang, loket: loketKey });
-                            processQueue();
+                    // LOGIKA BARU: Cek apakah status 'dipanggil' DAN token berubah (artinya ada klik panggil/panggil ulang)
+                    if (item.status === 'dipanggil' && !nomorSekarang.endsWith('000')) {
+                        if (lastTokenMap[loketKey] !== tokenSekarang) {
+                            if (audioEnabled) {
+                                speechQueue.push({ nomor: nomorSekarang, loket: loketKey });
+                                hasNewCall = true;
+                            }
                         }
                     }
                     
-                    lastDataMap[loketKey] = nomorSekarang;
+                    // Simpan token terakhir agar tidak terpanggil berulang kali saat interval refresh
+                    lastTokenMap[loketKey] = tokenSekarang;
                 });
 
-                if (!isSpeaking) {
-                    renderUI(data, null);
-                }
+                lastRawData = data;
+                if (!isSpeaking) renderUI(data, null);
+                if (hasNewCall && !isSpeaking) processQueue();
             });
         }
 
         function renderUI(data, activeLoketName) {
             let html = '';
-            if(data.length === 0) {
-                html = `<div class="text-center text-muted"><h2>BELUM ADA ANTRIAN AKTIF HARI INI</h2></div>`;
+            if(!data || data.length === 0) {
+                html = `<div class="text-center text-muted w-100 mt-5"><h2>BELUM ADA PETUGAS AKTIF</h2></div>`;
             } else {
+                const count = data.length;
+                let basis, headerSize, numberSize, tagSize;
+
+                if (count <= 3) {
+                    basis = '30%'; headerSize = '1.8rem'; numberSize = '7rem'; tagSize = '1.3rem';
+                } else if (count <= 6) {
+                    basis = '45%'; headerSize = '1.4rem'; numberSize = '5.5rem'; tagSize = '1.1rem';
+                } else if (count <= 8) {
+                    basis = '23%'; headerSize = '1.1rem'; numberSize = '4.5rem'; tagSize = '0.9rem';
+                } else {
+                    basis = count > 10 ? '18%' : '23%'; 
+                    headerSize = '0.9rem'; numberSize = '3.5rem'; tagSize = '0.8rem';
+                }
+
                 data.forEach(q => {
-                    const activeClass = (q.loket.nama_loket === activeLoketName) ? 'calling-now' : '';
+                    const isActive = (q.loket.nama_loket === activeLoketName);
+                    const activeClass = isActive ? 'calling-now' : '';
                     html += `
-                    <div class="card-loket ${activeClass}">
-                        <div class="loket-header">${q.loket.nama_loket}</div>
+                    <div class="card-loket ${activeClass}" style="flex: 1 1 ${basis}; max-width: ${basis === '30%' ? '450px' : '350px'};">
+                        <div class="loket-header" style="font-size: ${headerSize}">${q.loket.nama_loket}</div>
                         <div class="card-body">
-                            <div class="nomor-antrian">${q.nomor_antrian}</div>
-                            <div class="layanan-tag">${q.layanan.nama_layanan}</div>
+                            <div class="nomor-antrian" style="font-size: ${numberSize}">${q.nomor_antrian}</div>
+                            <div class="layanan-tag" style="font-size: ${tagSize}">${q.layanan.nama_layanan}</div>
                         </div>
                     </div>`;
                 });
@@ -288,24 +329,29 @@
             $('#antrian-container').html(html);
         }
 
-        // Jalankan sinkronisasi realtime 3 detik
-        setInterval(updateDisplay, 3000);
-        
-        // Inisialisasi awal tanpa suara
-        $.get('/api/display-data', function(data) {
-            data.forEach(item => {
-                lastDataMap[item.loket.nama_loket] = item.nomor_antrian;
+        $(document).ready(function() {
+            // Load awal data untuk inisialisasi lastTokenMap agar tidak langsung bunyi saat page load
+            $.get('/api/display-data', function(data) {
+                if(data && data.length > 0) {
+                    data.forEach(item => { 
+                        lastTokenMap[item.loket.nama_loket] = item.updated_token; 
+                    });
+                    lastRawData = data;
+                    renderUI(data, null);
+                }
             });
-            lastRawData = data;
-            renderUI(data, null);
-        });
 
-        // Jam Digital
-        setInterval(() => {
-            const now = new Date();
-            $('#clock-time').text(now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false }).replace(/\./g, ':'));
-            $('#clock-date').text(now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' }));
-        }, 1000);
+            setInterval(updateDisplay, 3000);
+
+            setInterval(() => {
+                const now = new Date();
+                const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
+                               now.getMinutes().toString().padStart(2, '0') + ':' + 
+                               now.getSeconds().toString().padStart(2, '0');
+                $('#clock-time').text(timeStr);
+                $('#clock-date').text(now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' }));
+            }, 1000);
+        });
     </script>
 </body>
 </html>
