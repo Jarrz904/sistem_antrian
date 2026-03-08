@@ -13,51 +13,54 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      */
-    public function run(): void {
+    public function run(): void
+    {
         // 1. Seed Layanan
         $layanans = [
+            // Disatukan kembali menjadi 1 Layanan sesuai permintaan Anda
             [
-                'nama_layanan' => 'Pelayanan Rekam KTP', 
-                'prefix' => 'A', 
-                'is_nik_required' => true, 
-                'icon' => 'fas fa-camera-retro',
-                'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan Rekam KTP.'
+                'nama_layanan' => 'Pelayanan Pencatatan Sipil Khusus',
+                'prefix' => 'A',
+                // Default false karena nanti akan dihandle oleh pilihan dropdown di dalam modal
+                'is_nik_required' => false,
+                'icon' => 'fas fa-user-shield',
+                'deskripsi' => 'Layanan Akte Kematian (Tanpa NIK), Perkawinan, dan Perceraian Non-Muslim.'
             ],
             [
-                'nama_layanan' => 'Pelayanan KTP dan KIA', 
-                'prefix' => 'B', 
-                'is_nik_required' => true, 
+                'nama_layanan' => 'Pelayanan BAKAK',
+                'prefix' => 'B',
+                'is_nik_required' => true,
+                'icon' => 'fas fa-file-alt',
+                'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan BAKAK.'
+            ],
+            [
+                'nama_layanan' => 'Pelayanan Adminduk',
+                'prefix' => 'C',
+                'is_nik_required' => true,
+                'icon' => 'fas fa-star',
+                'deskripsi' => 'KK, AKTE Kelahiran, Kematian dan Surat Pindah.'
+            ],
+            [
+                'nama_layanan' => 'Pelayanan KTP dan KIA',
+                'prefix' => 'D',
+                'is_nik_required' => true,
                 'icon' => 'fas fa-print',
                 'deskripsi' => 'Cetak KTP dan KIA, Perekaman Ulang, Tanda tangan Ulang.'
             ],
             [
-                'nama_layanan' => 'Pelayanan Adminduk', 
-                'prefix' => 'C', 
-                'is_nik_required' => true, 
-                'icon' => 'fas fa-star',
-                'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan Adminduk.'
-            ],
-            [
-                'nama_layanan' => 'Pelayanan BAKAK', 
-                'prefix' => 'D', 
-                'is_nik_required' => true, 
-                'icon' => 'fas fa-file-alt',
-                'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan BAKAK.'
-            ],
-            // Disatukan kembali menjadi 1 Layanan sesuai permintaan Anda
-            [
-                'nama_layanan' => 'Pelayanan Pencatatan Sipil Khusus', 
-                'prefix' => 'E', 
-                // Default false karena nanti akan dihandle oleh pilihan dropdown di dalam modal
-                'is_nik_required' => false, 
-                'icon' => 'fas fa-user-shield',
-                'deskripsi' => 'Layanan Akte Kematian (Tanpa NIK), Perkawinan, dan Perceraian Non-Muslim.'
+                'nama_layanan' => 'Pelayanan Rekam KTP',
+                'prefix' => 'E',
+                'is_nik_required' => true,
+                'icon' => 'fas fa-camera-retro',
+                'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan Rekam KTP.'
             ],
         ];
-        foreach($layanans as $l) \App\Models\Layanan::create($l);
+        foreach ($layanans as $l)
+            \App\Models\Layanan::create($l);
 
         // 2. Seed Loket
-        for($i=1; $i<=10; $i++) \App\Models\Loket::create(['nama_loket' => 'Loket ' . $i]);
+        for ($i = 1; $i <= 10; $i++)
+            \App\Models\Loket::create(['nama_loket' => 'Loket ' . $i]);
 
         // 3. Seed Admin (Login: admin / admin123)
         \App\Models\User::create([
@@ -100,8 +103,8 @@ class DatabaseSeeder extends Seeder
             'username' => 'petugas4',
             'password' => bcrypt('password'),
             'role' => 'petugas',
-            'layanan_id' => 3, 
-            'loket_id' => 4    
+            'layanan_id' => 3,
+            'loket_id' => 4
         ]);
 
         \App\Models\User::create([
@@ -109,8 +112,8 @@ class DatabaseSeeder extends Seeder
             'username' => 'petugas5',
             'password' => bcrypt('password'),
             'role' => 'petugas',
-            'layanan_id' => 3, 
-            'loket_id' => 5    
+            'layanan_id' => 3,
+            'loket_id' => 5
         ]);
 
         \App\Models\User::create([
@@ -119,7 +122,7 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password'),
             'role' => 'petugas',
             'layanan_id' => 4, // Melayani BAKAK
-            'loket_id' => 6    
+            'loket_id' => 6
         ]);
 
         \App\Models\User::create([
@@ -128,7 +131,7 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password'),
             'role' => 'petugas',
             'layanan_id' => 5, // Melayani Pencatatan Sipil Khusus
-            'loket_id' => 7    
+            'loket_id' => 7
         ]);
     }
 }

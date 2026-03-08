@@ -20,11 +20,9 @@
             height: 100%;
             margin: 0;
             font-family: 'Plus Jakarta Sans', sans-serif;
-            /* Scroll hanya aktif di mobile jika konten melebihi layar */
             overflow-x: hidden; 
         }
 
-        /* Background Gradient Bergerak */
         .full-bg {
             position: fixed;
             top: 0;
@@ -43,7 +41,6 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* Wrapper Responsif */
         .wrapper {
             min-height: 100vh;
             display: flex;
@@ -57,7 +54,6 @@
             max-width: 1200px;
         }
 
-        /* Glassmorphism Card */
         .card-custom {
             background: var(--glass-bg);
             backdrop-filter: blur(15px);
@@ -78,7 +74,7 @@
 
         .display-4 {
             font-weight: 800;
-            font-size: clamp(2rem, 5vw, 3.5rem); /* Ukuran font dinamis */
+            font-size: clamp(2rem, 5vw, 3.5rem);
             color: #0f172a;
             letter-spacing: -1.5px;
         }
@@ -112,24 +108,32 @@
             color: white;
         }
 
-        /* Footer Info */
         .footer-info {
             margin-top: 50px;
             font-weight: 700;
             color: #475569;
         }
 
-        /* Penyesuaian khusus Monitor/Layar Lebar */
+        /* Modal Styles */
+        .modal-content { border-radius: 25px; border: none; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { 
+                position: fixed; left: 0; top: 0; width: 100%; 
+                text-align: center; padding: 30px; border: none !important;
+            }
+        }
+
         @media (min-width: 992px) {
-            body { overflow: hidden; } /* Lock scroll di monitor */
+            body { overflow: hidden; }
             .wrapper { padding: 0; }
         }
 
-        /* Penyesuaian khusus Mobile */
         @media (max-width: 768px) {
             .display-4 { margin-top: 20px; }
             .card-custom { padding: 20px !important; }
-            .footer-info { position: static; margin-bottom: 20px; }
         }
     </style>
 </head>
@@ -189,6 +193,52 @@
         </div>
     </div>
 
+    @if(session('success_data'))
+    <div class="modal fade" id="modalSukses" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center p-4 shadow-lg">
+                <div class="modal-body">
+                    <div class="text-success mb-3">
+                        <i class="fas fa-check-circle fa-4x"></i>
+                    </div>
+                    <h3 class="fw-bold">Antrian Berhasil!</h3>
+                    
+                    <div id="printArea" class="border rounded-4 p-3 my-3 bg-light text-center">
+                        <p class="text-muted small mb-1">NOMOR ANTRIAN</p>
+                        <h1 class="display-2 fw-bold text-primary mb-0">{{ session('success_data')['nomor'] }}</h1>
+                        <hr>
+                        <p class="fw-bold mb-0 text-dark">{{ session('success_data')['layanan'] }}</p>
+                        <p class="mb-0 text-dark">{{ session('success_data')['nama'] }}</p>
+                        <small class="text-muted">{{ session('success_data')['waktu'] }}</small>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button onclick="window.print()" class="btn btn-primary btn-lg rounded-pill fw-bold shadow">
+                            <i class="fas fa-print me-2"></i>CETAK NOMOR
+                        </button>
+                        <button type="button" class="btn btn-light btn-lg rounded-pill fw-bold border" data-bs-dismiss="modal">
+                            TUTUP
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Trigger modal sukses otomatis jika data session tersedia
+        @if(session('success_data'))
+            document.addEventListener('DOMContentLoaded', function() {
+                const elSukses = document.getElementById('modalSukses');
+                if (elSukses) {
+                    const modalSuksesObj = new bootstrap.Modal(elSukses);
+                    modalSuksesObj.show();
+                }
+            });
+        @endif
+    </script>
 </body>
 </html>

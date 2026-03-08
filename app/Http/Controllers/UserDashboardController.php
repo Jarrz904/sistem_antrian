@@ -63,7 +63,6 @@ class UserDashboardController extends Controller
         ]);
 
         // 4. Hitung urutan antrian per layanan KHUSUS HARI INI
-        // Menggunakan lockForUpdate() opsional jika trafik sangat tinggi untuk menghindari nomor ganda
         $count = Queue::where('layanan_id', $layanan->id)
                       ->whereDate('created_at', $today)
                       ->count();
@@ -82,14 +81,18 @@ class UserDashboardController extends Controller
             'nama_pendaftar' => $request->nama,
             'nik'            => $request->filled('nik') ? $request->nik : null,
             'layanan_id'     => $request->layanan_id,
-            'loket_id'       => null, // Belum dipanggil ke loket manapun
+            'loket_id'       => null, 
             'status'         => 'menunggu',
             'created_at'     => $now, 
             'updated_at'     => $now,
         ]);
 
-        // 6. Alihkan kembali dengan data sukses ke session
-        return redirect()->back()->with('success_data', [
+        /**
+         * 6. REDIRECT KE WELCOME (HALAMAN UTAMA)
+         * Agar popup sukses muncul di halaman welcome dan saat tombol cetak/tutup diklik
+         * user tetap berada di alur menu utama.
+         */
+        return redirect()->route('welcome')->with('success_data', [
             'id'      => $queue->id,
             'nomor'   => $nomorAntrian,
             'nama'    => $request->nama,

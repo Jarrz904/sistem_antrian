@@ -38,12 +38,12 @@ class DashboardController extends Controller
 
         return [
             'totalAntrian' => Queue::whereDate('created_at', $today)->count(),
-            'selesai'      => Queue::where('status', 'selesai')->whereDate('created_at', $today)->count(),
-            'lewat'        => Queue::where('status', 'lewat')->whereDate('created_at', $today)->count(),
-            'dataAntrian'  => Queue::with(['layanan', 'loket'])
-                                ->whereDate('created_at', $today)
-                                ->orderBy('created_at', 'desc')
-                                ->get()
+            'selesai' => Queue::where('status', 'selesai')->whereDate('created_at', $today)->count(),
+            'lewat' => Queue::where('status', 'lewat')->whereDate('created_at', $today)->count(),
+            'dataAntrian' => Queue::with(['layanan', 'loket'])
+                ->whereDate('created_at', $today)
+                ->orderBy('created_at', 'desc')
+                ->get()
         ];
     }
 
@@ -69,19 +69,19 @@ class DashboardController extends Controller
     public function layananStore(Request $request)
     {
         $request->validate([
-            'nama_layanan'    => 'required|string|max:255',
-            'kode_layanan'    => 'required|alpha|max:1|unique:layanans,prefix', // Validasi ke kolom 'prefix'
+            'nama_layanan' => 'required|string|max:255',
+            'kode_layanan' => 'required|alpha|max:1|unique:layanans,prefix', // Validasi ke kolom 'prefix'
             'is_nik_required' => 'required|boolean',
-            'deskripsi'       => 'nullable|string'
+            'deskripsi' => 'nullable|string'
         ]);
 
         Layanan::create([
-            'nama_layanan'    => $request->nama_layanan,
-            'prefix'          => strtoupper($request->kode_layanan), // Simpan input 'kode_layanan' ke kolom 'prefix'
+            'nama_layanan' => $request->nama_layanan,
+            'prefix' => strtoupper($request->kode_layanan), // Simpan input 'kode_layanan' ke kolom 'prefix'
             'is_nik_required' => $request->is_nik_required,
-            'deskripsi'       => $request->deskripsi,
+            'deskripsi' => $request->deskripsi,
             // Jika Anda ingin menggunakan default icon bisa ditambahkan di sini
-            'icon'            => 'fas fa-file-alt' 
+            'icon' => 'fas fa-file-alt'
         ]);
 
         return back()->with('success', 'Layanan baru berhasil ditambahkan!');
@@ -95,17 +95,17 @@ class DashboardController extends Controller
         $layanan = Layanan::findOrFail($id);
 
         $request->validate([
-            'nama_layanan'    => 'required|string|max:255',
-            'kode_layanan'    => 'required|alpha|max:1|unique:layanans,prefix,' . $id,
+            'nama_layanan' => 'required|string|max:255',
+            'kode_layanan' => 'required|alpha|max:1|unique:layanans,prefix,' . $id,
             'is_nik_required' => 'required|boolean',
-            'deskripsi'       => 'nullable|string'
+            'deskripsi' => 'nullable|string'
         ]);
 
         $layanan->update([
-            'nama_layanan'    => $request->nama_layanan,
-            'prefix'          => strtoupper($request->kode_layanan),
+            'nama_layanan' => $request->nama_layanan,
+            'prefix' => strtoupper($request->kode_layanan),
             'is_nik_required' => $request->is_nik_required,
-            'deskripsi'       => $request->deskripsi,
+            'deskripsi' => $request->deskripsi,
         ]);
 
         return back()->with('success', 'Data layanan berhasil diperbarui!');
@@ -117,10 +117,10 @@ class DashboardController extends Controller
     public function layananDestroy($id)
     {
         $layanan = Layanan::findOrFail($id);
-        
+
         // Proteksi: Jangan hapus jika sudah ada antrian yang menggunakan layanan ini
         if ($layanan->queues()->exists()) {
-             return back()->with('error', 'Layanan tidak bisa dihapus karena memiliki riwayat data antrian.');
+            return back()->with('error', 'Layanan tidak bisa dihapus karena memiliki riwayat data antrian.');
         }
 
         $layanan->delete();
@@ -143,7 +143,15 @@ class DashboardController extends Controller
         $layanans = Layanan::all();
         $users = User::where('role', 'petugas')->get();
 
-        return view('admin.antrian_index', compact('dataAntrian', 'layanans', 'users'));
+        // TAMBAHKAN LOGIKA INI:
+        // Mengambil huruf pertama dari nomor_antrian yang unik untuk filter dropdown
+        $prefixes = Queue::selectRaw('SUBSTRING(nomor_antrian, 1, 1) as prefix')
+            ->distinct()
+            ->orderBy('prefix')
+            ->pluck('prefix');
+
+        // Masukkan 'prefixes' ke dalam compact()
+        return view('admin.antrian_index', compact('dataAntrian', 'layanans', 'users', 'prefixes'));
     }
 
     /**
@@ -153,16 +161,16 @@ class DashboardController extends Controller
     {
         $request->validate([
             'nama_pendaftar' => 'required|string|max:255',
-            'nik'            => 'required|numeric|digits:16',
-            'layanan_id'     => 'required|exists:layanans,id',
+            'nik' => 'required|numeric|digits:16',
+            'layanan_id' => 'required|exists:layanans,id',
         ]);
 
         $antrian = Queue::findOrFail($id);
         $antrian->update([
             'nama_pendaftar' => $request->nama_pendaftar,
-            'nik'            => $request->nik,
-            'layanan_id'     => $request->layanan_id,
-            'updated_at'     => Carbon::now('Asia/Jakarta')
+            'nik' => $request->nik,
+            'layanan_id' => $request->layanan_id,
+            'updated_at' => Carbon::now('Asia/Jakarta')
         ]);
 
         return back()->with('success', 'Data masyarakat berhasil diperbarui!');
@@ -210,11 +218,11 @@ class DashboardController extends Controller
         $antrian = $query->get();
 
         $headers = [
-            "Content-type"        => "text/csv",
+            "Content-type" => "text/csv",
             "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
         ];
 
         $columns = ['No Antrian', 'Nama Pemohon', 'NIK', 'Layanan', 'Tanggal', 'Jam', 'Loket', 'Petugas', 'Status'];
@@ -229,7 +237,7 @@ class DashboardController extends Controller
                 fputcsv($file, [
                     $q->nomor_antrian,
                     $q->nama_pendaftar,
-                    $q->nik . "\t", 
+                    $q->nik . "\t",
                     $q->layanan->nama_layanan ?? '-',
                     $date->translatedFormat('d F Y'),
                     $date->format('H:i'),
