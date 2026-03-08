@@ -40,26 +40,13 @@
                                     </button>
                                 </form>
                                 
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        {{-- RECALL: Memanggil ulang nomor yang sedang aktif --}}
-                                        <form action="{{ route('petugas.panggilUlang', $current->id) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-outline-primary w-100 fw-bold py-2">
-                                                RECALL <i class="fas fa-redo ms-1"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                    <div class="col-6">
-                                        {{-- LEWATI: Mengubah status menjadi 'lewat' --}}
-                                        <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-2">
-                                                LEWATI <i class="fas fa-step-forward ms-1"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
+                                {{-- Tombol Lewati --}}
+                                <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3">
+                                        LEWATI NOMOR INI <i class="fas fa-step-forward ms-1"></i>
+                                    </button>
+                                </form>
                             </div>
                         @else
                             <div class="py-4">
@@ -197,11 +184,10 @@
                 }
                 $('#tbody-menunggu').html(htmlMenunggu);
 
-                // Update Tabel Dilewati (Fixing Recall URL)
+                // Update Tabel Dilewati
                 let htmlSkipped = '';
                 if (response.skipped.length > 0) {
                     response.skipped.forEach(function(s) {
-                        // Menggunakan helper JavaScript untuk membuat URL yang benar
                         let recallUrl = "{{ route('petugas.panggilUlang', ':id') }}".replace(':id', s.id);
                         
                         htmlSkipped += `

@@ -5,17 +5,23 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('queues', function (Blueprint $table) {
             $table->id();
             $table->string('nomor_antrian'); 
             $table->string('nama_pendaftar');
+            
+            // nullable() memungkinkan pendaftaran Akte Kematian tanpa NIK tetap tersimpan
             $table->string('nik', 16)->nullable();
+            
             $table->foreignId('layanan_id')->constrained()->onDelete('cascade');
             $table->foreignId('loket_id')->nullable()->constrained()->onDelete('set null');
             
-            // TAMBAHKAN INI: Menghubungkan ke tabel users (petugas)
+            // Menghubungkan ke tabel users (petugas yang memproses antrian)
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             
             $table->enum('status', ['menunggu', 'dipanggil', 'lewat', 'selesai'])->default('menunggu');
@@ -24,6 +30,9 @@ return new class extends Migration {
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('queues');

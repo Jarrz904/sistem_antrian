@@ -61,6 +61,7 @@ Route::middleware(['auth', 'role:petugas'])->prefix('petugas')->group(function (
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    
     // Dashboard Ringkasan Statistik
     Route::get('/', [AdminDashboard::class, 'index'])->name('admin.dashboard');
 
@@ -73,6 +74,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     // --- Kelola Loket ---
     Route::post('/loket/update/{id}', [AdminPetugas::class, 'updateLoket'])->name('admin.loket.update');
 
+    // --- KELOLA LAYANAN (Integrasi Baru) ---
+    Route::get('/layanan', [AdminDashboard::class, 'layananIndex'])->name('admin.layanan');
+    Route::post('/layanan/store', [AdminDashboard::class, 'layananStore'])->name('admin.layanan.store');
+    Route::put('/layanan/update/{id}', [AdminDashboard::class, 'layananUpdate'])->name('admin.layanan.update');
+    Route::delete('/layanan/delete/{id}', [AdminDashboard::class, 'layananDestroy'])->name('admin.layanan.destroy');
+
     // --- Kelola Data Antrian (Log/Riwayat) ---
     Route::get('/antrian', [AdminDashboard::class, 'antrianIndex'])->name('admin.antrian');
     Route::post('/antrian/update/{id}', [AdminDashboard::class, 'updateAntrian'])->name('admin.antrian.update');
@@ -81,6 +88,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     // Reset Display & Realtime Stats
     Route::get('/reset-display', [AdminDashboard::class, 'resetDisplay'])->name('admin.reset-display');
     Route::get('/realtime-stats', [AdminDashboard::class, 'getRealtimeStats'])->name('admin.realtime-stats');
+
+    // Recall Khusus Petugas/Admin
+    Route::post('/petugas/recall/{id}', [AntrianController::class, 'panggilUlang'])->name('petugas.panggilUlang');
 
     // --- Fitur Export ---
     Route::get('/export-masyarakat', [AdminDashboard::class, 'exportCSV'])->name('admin.export');

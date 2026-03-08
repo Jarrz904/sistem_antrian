@@ -113,7 +113,7 @@ class PetugasController extends Controller
         $callback = function() use ($data) {
             $handle = fopen('php://output', 'w');
             
-            // Tambahkan BOM (Byte Order Mark) agar karakter UTF-8 (seperti simbol) terbaca benar di Excel
+            // Tambahkan BOM (Byte Order Mark) agar karakter UTF-8 terbaca benar di Excel
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
             
             // Header Kolom CSV
@@ -131,11 +131,14 @@ class PetugasController extends Controller
             foreach ($data as $row) {
                 $waktu = Carbon::parse($row->created_at)->timezone('Asia/Jakarta');
                 
+                // Cek NIK: Jika kosong (seperti pada Akte Kematian), tampilkan strip (-)
+                $nikExport = !empty($row->nik) ? "\t" . $row->nik : '-';
+
                 // Menulis baris data
                 fputcsv($handle, [
                     $row->nomor_antrian,
                     $row->nama_pendaftar,
-                    "\t" . $row->nik, // Menggunakan tab atau petik untuk mencegah Excel mengubah NIK jadi angka scientific
+                    $nikExport, 
                     $row->layanan->nama_layanan ?? '-',
                     $waktu->translatedFormat('d F Y') . ' ' . $waktu->format('H:i'), 
                     $row->loket->nama_loket ?? '-',

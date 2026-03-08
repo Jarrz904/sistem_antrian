@@ -10,257 +10,216 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body {
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; 
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f4f7fa;
-            color: #2d3436;
+            background-color: #f8f9fa;
         }
 
-        .btn-back-top {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            background: #fff;
-            padding: 10px 20px;
-            border-radius: 50px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: #636e72;
-            font-weight: 600;
+        .page-wrapper {
             display: flex;
-            align-items: center;
-            border: 1px solid #e0e6ed;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
         }
 
-        .btn-back-top:hover {
-            background: #f8f9fa;
-            transform: translateX(-5px);
-            color: #0d6efd;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-        }
-
-        /* --- PERBAIKAN HERO SECTION BERWARNA --- */
-        .hero-section {
-            padding: 100px 0 80px;
-            /* Menggunakan Gradient Berwarna Modern */
-            background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
-            position: relative;
-            overflow: hidden;
-            color: white;
-            margin-bottom: 50px;
-            clip-path: ellipse(150% 100% at 50% 0%); /* Memberikan efek lengkungan halus di bawah */
-        }
-
-        /* Dekorasi Lingkaran Cahaya */
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: -50px;
-            right: -50px;
-            width: 300px;
-            height: 300px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-        }
-
-        .hero-section::after {
-            content: '';
-            position: absolute;
-            bottom: -100px;
-            left: -50px;
-            width: 250px;
-            height: 250px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 50%;
-        }
-
-        .hero-title {
-            font-weight: 800;
-            letter-spacing: -1px;
-            /* Mengatur ukuran font responsif untuk monitor */
-            font-size: clamp(2.5rem, 5vw, 4.5rem); 
-            margin-bottom: 15px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .hero-subtitle {
-            font-weight: 400;
-            font-size: clamp(1.1rem, 1.5vw, 1.4rem);
-            opacity: 0.9;
-            max-width: 800px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-
-        .hero-badge {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(5px);
-            color: #fff;
-            padding: 8px 24px;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            display: inline-block;
+        .compact-header {
+            text-align: center;
             margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            flex: 0 0 auto;
         }
-        /* --- END HERO SECTION --- */
+
+        .header-title {
+            font-weight: 800;
+            color: #0d6efd;
+            font-size: clamp(1.5rem, 4vh, 2.5rem);
+            margin-bottom: 5px;
+        }
+
+        .header-subtitle {
+            color: #636e72;
+            font-size: clamp(0.9rem, 2vh, 1.1rem);
+            margin: 0;
+        }
+
+        .content-section {
+            flex: 1;
+            display: flex;
+            align-items: center; 
+            overflow: hidden;
+        }
 
         .card-layanan {
             border: none;
-            border-radius: 25px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
+            border-radius: 20px;
             background: #fff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            height: 100%; 
+            display: flex;
+            flex-direction: column;
+            padding: 15px !important;
         }
 
         .card-layanan:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
         }
 
         .icon-wrapper {
-            width: 100px;
-            height: 100px;
+            width: 60px;
+            height: 60px;
             background: rgba(13, 110, 253, 0.08);
             color: #0d6efd;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 20px;
-            margin: 0 auto 20px;
-            transition: 0.3s;
-        }
-
-        .card-layanan:hover .icon-wrapper {
-            background: #0d6efd;
-            color: #fff;
-            transform: scale(1.1);
-        }
-
-        .modal-content {
-            border-radius: 30px;
-            border: none;
-        }
-
-        .form-control-custom {
             border-radius: 15px;
-            padding: 15px;
-            border: 2px solid #eee;
-            background-color: #f9f9f9;
+            margin: 0 auto 15px;
+            flex-shrink: 0;
         }
 
-        .form-control-custom:focus {
-            box-shadow: none;
-            border-color: #0d6efd;
-            background-color: #fff;
-        }
-
-        .btn-ambil {
-            padding: 15px;
-            border-radius: 15px;
+        .card-title {
             font-weight: 700;
+            font-size: clamp(1rem, 2.2vh, 1.3rem);
+            margin-bottom: 8px;
+            color: #2d3436;
+        }
+
+        .card-text {
+            font-size: clamp(0.75rem, 1.8vh, 0.9rem);
+            color: #636e72;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            flex-grow: 1; 
+        }
+
+        .btn-pilih {
+            border-radius: 50px;
+            font-weight: 700;
+            padding: 10px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        /* Area Cetak */
-        #printArea {
-            background: #fff;
-            border: 2px dashed #d1d8e0;
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
+        .btn-back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-decoration: none;
+            color: #0d6efd;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            z-index: 10;
         }
+
+        .modal-content { border-radius: 25px; border: none; }
+        .form-control-custom { border-radius: 12px; padding: 12px; background-color: #f1f3f5; border: none; }
 
         @media print {
             body * { visibility: hidden; }
             #printArea, #printArea * { visibility: visible; }
             #printArea { 
-                position: absolute; 
+                position: fixed; 
                 left: 0; 
                 top: 0; 
                 width: 100%; 
-                border: none;
+                text-align: center; 
+                padding: 50px;
+                border: none !important;
+                background: white !important;
             }
         }
     </style>
 </head>
 <body>
 
-<a href="{{ url('/') }}" class="btn-back-top">
-    <i class="fas fa-arrow-left me-2"></i> Beranda
-</a>
+<div class="page-wrapper">
+    <a href="{{ url('/') }}" class="btn-back">
+        <i class="fas fa-arrow-left me-2"></i> Beranda
+    </a>
 
-<div class="hero-section text-center">
-    <div class="container">
-        <div class="hero-badge">Portal Layanan Publik</div>
-        <h1 class="hero-title">Pilih Jenis Layanan</h1>
-        <p class="hero-subtitle">
-            Selamat datang! Silahkan pilih kategori layanan yang Anda butuhkan di bawah ini untuk mendapatkan nomor urut pelayanan secara otomatis.
-        </p>
-    </div>
-</div>
+    <header class="compact-header">
+        <h1 class="header-title">Pilih Jenis Layanan</h1>
+        <p class="header-subtitle">Silahkan pilih kategori untuk mendapatkan nomor antrian</p>
+    </header>
 
-<div class="container pb-5">
-    <div class="row g-4 justify-content-center">
-        @foreach($layanans as $l)
-        <div class="col-md-4">
-            <div class="card card-layanan shadow-sm h-100 p-4 text-center">
-                <div class="card-body d-flex flex-column">
-                    <div class="icon-wrapper">
-                        {{-- Mengambil ikon langsung dari Database --}}
-                        <i class="{{ $l->icon ?? 'fas fa-file-lines' }} fa-4x"></i>
+    <main class="content-section">
+        <div class="container-fluid px-md-5">
+            <div class="row g-3 justify-content-center">
+                @foreach($layanans as $l)
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="card card-layanan text-center">
+                        <div class="icon-wrapper">
+                            <i class="{{ $l->icon ?? 'fas fa-file-lines' }} fa-2x"></i>
+                        </div>
+                        <h3 class="card-title">{{ $l->nama_layanan }}</h3>
+                        <p class="card-text">
+                            {{ $l->deskripsi ?? 'Layanan administrasi ' . $l->nama_layanan . '.' }}
+                        </p>
+                        <button type="button" 
+                                class="btn btn-primary btn-pilih w-100 shadow-sm" 
+                                onclick="pilihLayanan('{{ $l->id }}', '{{ $l->nama_layanan }}', {{ $l->is_nik_required ? 'true' : 'false' }})">
+                            Ambil Antrian
+                        </button>
                     </div>
-                    <h3 class="fw-bold mb-3">{{ $l->nama_layanan }}</h3>
-                    
-                    {{-- Deskripsi dinamis dari Database --}}
-                    <p class="text-muted small mb-4">
-                        {{ $l->deskripsi ?? 'Pengurusan administrasi kependudukan untuk layanan ' . $l->nama_layanan . '.' }}
-                    </p>
-                    
-                    <button type="button" 
-                            class="btn btn-primary btn-lg mt-auto rounded-pill fw-bold" 
-                            onclick="pilihLayanan('{{ $l->id }}', '{{ $l->nama_layanan }}', {{ $l->is_nik_required ? 'true' : 'false' }})">
-                        Pilih Layanan
-                    </button>
                 </div>
+                @endforeach
             </div>
         </div>
-        @endforeach
-    </div>
+    </main>
 </div>
 
-{{-- Modal Input Nama & NIK --}}
 <div class="modal fade" id="modalInputAntrian" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow-lg">
-            <div class="modal-header border-0 pt-4 px-4">
-                <h4 class="modal-title fw-bold" id="titleLayanan">Detail Pendaftaran</h4>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
             <div class="modal-body p-4">
-                <form action="{{ route('user.store') }}" method="POST">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold mb-0" id="titleLayanan">Detail Pendaftaran</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                @if ($errors->any())
+                    <div class="alert alert-danger small mb-3">
+                        <ul class="mb-0">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form action="{{ route('user.store') }}" method="POST" id="formAntrian">
                     @csrf
                     <input type="hidden" name="layanan_id" id="selected_layanan_id">
-
+                    
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Nama Lengkap</label>
+                        <label class="form-label fw-bold small">Nama Lengkap</label>
                         <input type="text" name="nama" class="form-control form-control-custom" placeholder="Masukkan nama Anda" required>
                     </div>
 
-                    <div class="mb-4" id="nik_container">
-                        <label class="form-label fw-bold">NIK (16 Digit)</label>
-                        <input type="number" name="nik" id="input_nik" class="form-control form-control-custom" placeholder="Masukkan 16 digit NIK" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" maxlength="16">
+                    <div id="sub_layanan_container" style="display: none;" class="mb-3">
+                        <label class="form-label fw-bold small">Pilih Jenis Urusan</label>
+                        <select id="sub_layanan_select" class="form-select form-control-custom" onchange="toggleNikBySubLayanan()">
+                            <option value="kematian">Akte Kematian (Tanpa NIK)</option>
+                            <option value="perkawinan_perceraian">Perkawinan / Perceraian Non-Muslim (Wajib NIK)</option>
+                        </select>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 btn-ambil shadow">
-                        <i class="fas fa-ticket-alt me-2"></i> AMBIL NOMOR ANTRIAN
+                    <div class="mb-4" id="nik_container">
+                        <label class="form-label fw-bold small">NIK (16 Digit)</label>
+                        <input type="number" name="nik" id="input_nik" class="form-control form-control-custom" placeholder="Masukkan NIK" 
+                               oninput="javascript: if (this.value.length > 16) this.value = this.value.slice(0, 16);">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow">
+                        KONFIRMASI ANTRIAN
                     </button>
                 </form>
             </div>
@@ -268,37 +227,25 @@
     </div>
 </div>
 
-{{-- Modal Sukses --}}
 @if(session('success_data'))
 <div class="modal fade" id="modalSukses" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body text-center p-5">
-                <div class="text-success mb-4">
-                    <i class="fas fa-check-circle fa-6x"></i>
+        <div class="modal-content text-center p-4">
+            <div class="modal-body">
+                <div class="text-success mb-3">
+                    <i class="fas fa-check-circle fa-4x"></i>
                 </div>
-                <h2 class="fw-bold mb-1">Berhasil!</h2>
-                <p class="text-muted">Nomor antrian Anda telah diterbitkan.</p>
-
-                <div id="printArea" class="my-4">
-                    <h6 class="text-uppercase text-muted mb-1 small">Nomor Antrian</h6>
-                    <h1 class="display-1 fw-bold text-primary mb-0" style="letter-spacing: -3px;">
-                        {{ session('success_data')['nomor'] }}
-                    </h1>
-                    <div class="my-3">
-                        <hr>
-                        <p class="fw-bold mb-0">{{ session('success_data')['layanan'] }}</p>
-                        <small class="text-muted">{{ session('success_data')['waktu'] }} WIB</small>
-                    </div>
+                <h3 class="fw-bold">Antrian Berhasil!</h3>
+                <div id="printArea" class="border rounded-4 p-3 my-3 bg-light text-center">
+                    <p class="text-muted small mb-1">NOMOR ANTRIAN</p>
+                    <h1 class="display-2 fw-bold text-primary mb-0">{{ session('success_data')['nomor'] }}</h1>
+                    <hr>
+                    <p class="fw-bold mb-0 text-dark">{{ session('success_data')['layanan'] }}</p>
+                    <small class="text-muted">{{ session('success_data')['waktu'] }} WIB</small>
                 </div>
-
-                <div class="d-grid gap-2 mt-4">
-                    <button onclick="printAntrian()" class="btn btn-primary btn-lg rounded-pill fw-bold">
-                        <i class="fas fa-print me-2"></i> CETAK NOMOR ANTRIAN
-                    </button>
-                    <a href="{{ url('/ambil-antrian') }}" class="btn btn-outline-dark btn-lg rounded-pill fw-bold border-2">
-                        KEMBALI
-                    </a>
+                <div class="d-grid gap-2">
+                    <button onclick="printAntrian()" class="btn btn-primary btn-lg rounded-pill fw-bold shadow">CETAK NOMOR</button>
+                    <a href="{{ url('/ambil-antrian') }}" class="btn btn-light rounded-pill fw-bold">TUTUP</a>
                 </div>
             </div>
         </div>
@@ -309,33 +256,72 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+    // Inisialisasi variabel modal secara global untuk menghindari konflik re-inisialisasi
+    let inputModalObj;
+
     function pilihLayanan(id, nama, nikRequired) {
+        // Set data ke field hidden
         document.getElementById('selected_layanan_id').value = id;
-        document.getElementById('titleLayanan').innerText = 'Daftar ' + nama;
+        document.getElementById('titleLayanan').innerText = nama;
         
+        const subContainer = document.getElementById('sub_layanan_container');
         const nikContainer = document.getElementById('nik_container');
         const inputNik = document.getElementById('input_nik');
-        
-        if (nikRequired) {
-            nikContainer.style.display = 'block';
-            inputNik.setAttribute('required', 'required');
-        } else {
-            nikContainer.style.display = 'none';
-            inputNik.removeAttribute('required');
-            inputNik.value = ''; 
-        }
 
-        const myModal = new bootstrap.Modal(document.getElementById('modalInputAntrian'));
-        myModal.show();
+        // Reset form
+        document.getElementById('formAntrian').reset();
+        document.getElementById('selected_layanan_id').value = id;
+
+        // Logic Custom untuk Pencatatan Sipil Khusus
+        if (nama.includes("Pencatatan Sipil Khusus")) {
+            subContainer.style.display = 'block';
+            toggleNikBySubLayanan(); 
+        } else {
+            subContainer.style.display = 'none';
+            if (nikRequired) {
+                nikContainer.style.display = 'block';
+                inputNik.setAttribute('required', 'required');
+            } else {
+                nikContainer.style.display = 'none';
+                inputNik.removeAttribute('required');
+                inputNik.value = '';
+            }
+        }
+        
+        // Membuka modal menggunakan instance Bootstrap
+        if (!inputModalObj) {
+            inputModalObj = new bootstrap.Modal(document.getElementById('modalInputAntrian'));
+        }
+        inputModalObj.show();
     }
 
+    function toggleNikBySubLayanan() {
+        const select = document.getElementById('sub_layanan_select');
+        const nikContainer = document.getElementById('nik_container');
+        const inputNik = document.getElementById('input_nik');
+
+        if (select.value === 'kematian') {
+            nikContainer.style.display = 'none';
+            inputNik.removeAttribute('required');
+            inputNik.value = '';
+        } else {
+            nikContainer.style.display = 'block';
+            inputNik.setAttribute('required', 'required');
+        }
+    }
+
+    // Trigger modal sukses saat halaman selesai dimuat
     @if(session('success_data'))
         document.addEventListener('DOMContentLoaded', function() {
-            const suksesModal = new bootstrap.Modal(document.getElementById('modalSukses'));
-            suksesModal.show();
+            const elSukses = document.getElementById('modalSukses');
+            if (elSukses) {
+                const modalSuksesObj = new bootstrap.Modal(elSukses);
+                modalSuksesObj.show();
+            }
         });
     @endif
 
+    // Fungsi Cetak
     function printAntrian() {
         window.print();
     }

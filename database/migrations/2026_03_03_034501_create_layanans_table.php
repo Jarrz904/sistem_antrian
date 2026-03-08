@@ -13,10 +13,16 @@ return new class extends Migration {
         Schema::create('layanans', function (Blueprint $table) {
             $table->id();
             $table->string('nama_layanan');
-            $table->text('deskripsi')->nullable(); // Tambahkan kolom deskripsi di sini
-            $table->string('icon')->nullable();
-            $table->char('prefix', 1);
-            $table->boolean('is_nik_required')->default(true);
+            $table->text('deskripsi')->nullable(); // Menampung keterangan layanan (Akte Kematian, dll)
+            $table->string('icon')->nullable();    // Menampung class FontAwesome
+            $table->char('prefix', 1);             // Prefix nomor antrian (A, B, C)
+            
+            /** * Kolom Kunci Sinkronisasi: 
+             * true  = Layanan wajib NIK (Perkawinan/Perceraian Non-Muslim)
+             * false = Layanan tidak butuh NIK (Akte Kematian Tanpa NIK)
+             */
+            $table->boolean('is_nik_required')->default(true); 
+            
             $table->timestamps();
         });
     }

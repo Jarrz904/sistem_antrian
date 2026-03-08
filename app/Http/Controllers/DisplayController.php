@@ -10,18 +10,19 @@ use Illuminate\Support\Carbon;
 class DisplayController extends Controller
 {
     /**
-     * Menampilkan halaman utama monitor antrian (Blade View)
+     * Menampilkan halaman display antrian publik.
      */
     public function index() {
         return view('public.display');
     }
 
     /**
-     * Mengambil data JSON untuk monitor
-     * Logika ini menangani tampilan nomor terakhir dan panggil ulang agar bersuara
+     * Mengambil data antrian untuk monitor display.
+     * Logika disesuaikan agar nomor yang baru dipanggil otomatis (setelah tombol 'Lewati' ditekan)
+     * langsung muncul dan memicu suara pada monitor.
      */
     public function getDisplayData() {
-        // 1. Ambil semua petugas yang memiliki loket, urutkan berdasarkan nama loket
+        // Ambil semua petugas yang bertugas di loket hari ini
         $petugasAktif = User::whereNotNull('loket_id')
             ->with(['loket', 'layanan'])
             ->get()
@@ -35,28 +36,24 @@ class DisplayController extends Controller
             $prefix = $prefixes[$index] ?? 'Z';
 
             /**
-             * LOGIKA UTAMA:
-             * Mencari antrian terakhir yang diproses di loket ini hari ini.
-             * Menggunakan status 'dipanggil', 'selesai', atau 'lewat'.
-             * Ini memastikan jika antrian habis, nomor terakhir tetap terpampang (tidak reset ke A000).
+             * PERBAIKAN LOGIKA & SINKRONISASI:
+             * 1. Cari antrian yang statusnya 'dipanggil' hari ini (PRIORITAS UTAMA).
+             * 2. Jika petugas baru saja menekan 'Lewati', status nomor lama menjadi 'lewat' 
+             * dan nomor baru menjadi 'dipanggil'. Query ini akan otomatis menangkap nomor baru tersebut.
+             * 3. Jika tidak ada yang 'dipanggil', ambil yang terakhir 'selesai' atau 'lewat'.
+             * 4. FIELD(status, 'dipanggil', 'selesai', 'lewat') memastikan status aktif selalu di posisi pertama.
              */
             $lastQueue = Queue::with('layanan')
                 ->where('loket_id', $petugas->loket_id)
                 ->whereDate('created_at', Carbon::today())
                 ->whereIn('status', ['dipanggil', 'selesai', 'lewat'])
-                ->orderBy('updated_at', 'desc') // Mengambil yang paling baru diupdate
+                ->orderByRaw("FIELD(status, 'dipanggil', 'selesai', 'lewat') ASC") 
+                ->orderBy('updated_at', 'desc')
                 ->first();
 
-            // Penentuan nomor dan layanan teks di monitor
             $nomorTampil = $lastQueue ? $lastQueue->nomor_antrian : $prefix . '000';
             $layananTampil = $lastQueue ? $lastQueue->layanan->nama_layanan : ($petugas->layanan->nama_layanan ?? 'SIAP MELAYANI');
 
-            /**
-             * LOGIKA SUARA & RECALL:
-             * 'status' dikirim sebagai 'dipanggil' hanya jika status di DB memang 'dipanggil'.
-             * 'updated_token' (timestamp) adalah kunci agar JavaScript tahu ada perubahan (Recall).
-             * Di sisi Frontend (JS), buat logika: jika token berubah dan status 'dipanggil', putar suara.
-             */
             $displayData[] = [
                 'id_antrian'    => $lastQueue->id ?? null,
                 'loket' => [
@@ -67,13 +64,16 @@ class DisplayController extends Controller
                 'layanan' => [
                     'nama_layanan' => $layananTampil
                 ],
-                // Status 'dipanggil' akan memicu suara pada monitor
-                // Jika sudah 'selesai', status menjadi 'standby' agar tidak bersuara terus-menerus
+                // Status 'dipanggil' memicu suara di JS monitor
                 'status'        => ($lastQueue && $lastQueue->status == 'dipanggil') ? 'dipanggil' : 'standby',
                 
-                // Token unik berdasarkan waktu update terakhir. 
-                // Saat tombol 'Panggil Ulang' ditekan, timestamp ini akan berubah.
-                'updated_token' => $lastQueue ? $lastQueue->updated_at->timestamp : null,
+                /**
+                 * updated_token (microtime) tetap dipertahankan. 
+                 * Saat petugas klik 'Lewati' dan sistem otomatis memanggil nomor baru, 
+                 * updated_at nomor baru tersebut akan dikirim ke sini sebagai token baru 
+                 * sehingga monitor publik langsung berbunyi.
+                 */
+                'updated_token' => $lastQueue ? $lastQueue->updated_at->format('Y-m-d H:i:s.u') : null,
             ];
             
             $index++;
