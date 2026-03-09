@@ -7,7 +7,7 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -68,7 +68,7 @@
             flex-direction: column;
             justify-content: center;
             margin: 0 auto;
-            max-width: 500px;
+            max-width: 500px; 
         }
 
         .card-custom:hover {
@@ -121,44 +121,34 @@
         /* Modal Styles */
         .modal-content { border-radius: 25px; border: none; }
         
-        /* OPTIMASI CETAK */
+        /* PENGATURAN CETAK DIPERTEBAL, HITAM PEKAT, & FULL TANPA POTONG */
         @media print {
-            @page {
-                margin: 0.5cm; /* Memberikan sedikit ruang agar tidak terpotong di printer standar */
-                size: auto;
-            }
-            body {
-                background: white !important;
+            @page { margin: 0; } /* Hilangkan margin bawaan browser */
+            body { margin: 0; background-color: #fff !important; }
+            body * { visibility: hidden; }
+            #printArea, #printArea * { 
+                visibility: visible; 
+                color: #000000 !important; /* Paksa hitam pekat */
+                font-weight: 900 !important; /* Paksa penebalan maksimal */
+                text-shadow: none !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
-            body * {
-                visibility: hidden;
+            #printArea { 
+                position: absolute; /* Ubah fixed jadi absolute agar tidak bug saat ditarik printer */
+                left: 0; 
+                top: 0; 
+                width: 100% !important;
+                max-width: 76mm !important; /* Batas aman kertas 80mm agar tidak terpotong */
+                box-sizing: border-box !important; /* Mencegah padding membuat layout melebar */
+                text-align: center; 
+                padding: 15px 5px !important; /* Padding cetak disesuaikan agar tidak mendorong ke samping */
+                border: none !important;
             }
-            #printArea, #printArea * {
-                visibility: visible;
-                color: #000000 !important; /* Hitam Pekat */
-            }
-            #printArea {
-                position: absolute;
-                left: 50%;
-                top: 0;
-                transform: translateX(-50%);
-                width: 100%;
-                max-width: 450px; /* Cocok untuk berbagai ukuran printer */
-                border: 2px solid #000 !important;
-                padding: 30px !important;
-                background-color: white !important;
-                box-shadow: none !important;
-                border-radius: 15px !important;
-            }
-            hr {
-                border-top: 2px solid #000 !important;
-                opacity: 1 !important;
-                margin: 15px 0 !important;
-            }
-            .text-muted {
-                color: #000 !important; /* Ubah abu-abu jadi hitam saat cetak agar tajam */
+            hr { 
+                border-top: 3px solid #000000 !important; /* Garis pembatas tebal & pekat */
+                opacity: 1 !important; 
+                margin: 10px 0 !important;
             }
         }
 
@@ -224,30 +214,22 @@
                     </div>
                     <h3 class="fw-bold no-print">Antrian Berhasil!</h3>
                     
-                    <div id="printArea" class="border rounded-4 p-4 my-3 bg-light text-center">
-                        <p class="text-dark small mb-1 fw-bold" style="letter-spacing: 2px;">NOMOR ANTRIAN</p>
-                        <h1 class="display-1 fw-bold text-primary mb-0" style="font-size: 80px; line-height: 1;">
-                            {{ session('success_data')['nomor'] }}
-                        </h1>
+                    <div id="printArea" class="border rounded-4 p-3 my-3 bg-light text-center">
+                        <p class="text-dark small mb-1 fw-bold">NOMOR ANTRIAN</p>
+                        
+                        <h1 class="display-2 fw-bold text-dark mb-0">{{ session('success_data')['nomor'] }}</h1>
+                        
                         <hr>
-                        <h4 class="fw-bold mb-1 text-dark" style="text-transform: uppercase;">
-                            {{ session('success_data')['layanan'] }}
-                        </h4>
-                        <p class="mb-2 text-dark fw-bold" style="font-size: 1.1rem;">
-                            {{ session('success_data')['nama'] }}
+                        <p class="fw-bold mb-0 text-dark">{{ session('success_data')['layanan'] }}</p>
+                        <p class="mb-0 text-dark fw-bold">{{ session('success_data')['nama'] }}</p>
+                        
+                        <p class="mt-2 mb-0 text-dark fw-bold" style="font-size: 0.95rem;">
+                            {{ date('d F Y') }} | {{ session('success_data')['waktu'] }} WIB
                         </p>
-                        <div class="border-top pt-2 mt-2">
-                            <p class="mb-0 text-dark fw-bold" style="font-size: 14px;">
-                                <i class="fas fa-calendar-alt me-1"></i> {{ date('d-m-Y') }}
-                            </p>
-                            <p class="mb-0 text-dark fw-bold" style="font-size: 14px;">
-                                <i class="fas fa-clock me-1"></i> {{ session('success_data')['waktu'] }} WIB
-                            </p>
-                        </div>
                     </div>
 
                     <div class="d-grid gap-2 no-print">
-                        <button onclick="window.print()" class="btn btn-primary btn-lg rounded-pill fw-bold shadow py-3">
+                        <button onclick="window.print()" class="btn btn-primary btn-lg rounded-pill fw-bold shadow">
                             <i class="fas fa-print me-2"></i>CETAK NOMOR
                         </button>
                         <button type="button" class="btn btn-light btn-lg rounded-pill fw-bold border" data-bs-dismiss="modal">
