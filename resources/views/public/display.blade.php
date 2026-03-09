@@ -184,7 +184,6 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // lastTokenMap menyimpan updated_token dari setiap loket untuk deteksi panggil ulang
         let lastTokenMap = {};
         let lastRawData = [];
         let speechQueue = [];
@@ -218,9 +217,8 @@
             const angkaInt = parseInt(angkaPart);
 
             let ejaanAngka = "";
-
             if (angkaInt === 0) {
-                ejaanAngka = angkaPart.split('').map(() => 'kosong').join(', ');
+                ejaanAngka = "kosong, kosong, kosong";
             } else if (angkaPart.startsWith('0')) {
                 const matchNol = angkaPart.match(/^0+/);
                 const jumlahNol = matchNol ? matchNol[0].length : 0;
@@ -229,7 +227,6 @@
             } else {
                 ejaanAngka = angkaInt;
             }
-
             return `${huruf}, ${ejaanAngka}`;
         }
 
@@ -239,7 +236,7 @@
             isSpeaking = true;
             const item = speechQueue.shift();
             
-            // Highlight loket yang sedang dipanggil
+            // Highlight loket yang aktif saat bersuara
             renderUI(lastRawData, item.loket);
 
             bell.play().then(() => {
@@ -248,15 +245,15 @@
                     const teks = `Nomor antrian, ${nomorEja}, silakan menuju ke, ${item.loket}`;
                     const utter = new SpeechSynthesisUtterance(teks);
                     utter.lang = 'id-ID';
-                    utter.rate = 0.95; 
-                    utter.pitch = 1.2; 
+                    utter.rate = 0.9; 
+                    utter.pitch = 1.1; 
                     
                     if (indonesianVoice) utter.voice = indonesianVoice;
 
                     utter.onend = function() {
                         isSpeaking = false;
                         renderUI(lastRawData, null); 
-                        setTimeout(processQueue, 1500);
+                        setTimeout(processQueue, 1000);
                     };
                     window.speechSynthesis.speak(utter);
                 }, 1200);
@@ -272,9 +269,9 @@
                 data.forEach(item => {
                     const loketKey = item.loket.nama_loket;
                     const nomorSekarang = item.nomor_antrian;
-                    const tokenSekarang = item.updated_token; // Token unik (timestamp) dari backend
+                    const tokenSekarang = item.updated_token;
 
-                    // LOGIKA BARU: Cek apakah status 'dipanggil' DAN token berubah (artinya ada klik panggil/panggil ulang)
+                    // SYARAT PANGGIL: Status dipanggil DAN token berubah DAN bukan nomor default 000
                     if (item.status === 'dipanggil' && !nomorSekarang.endsWith('000')) {
                         if (lastTokenMap[loketKey] !== tokenSekarang) {
                             if (audioEnabled) {
@@ -283,8 +280,6 @@
                             }
                         }
                     }
-                    
-                    // Simpan token terakhir agar tidak terpanggil berulang kali saat interval refresh
                     lastTokenMap[loketKey] = tokenSekarang;
                 });
 
@@ -302,15 +297,13 @@
                 const count = data.length;
                 let basis, headerSize, numberSize, tagSize;
 
+                // Penyesuaian ukuran grid berdasarkan jumlah loket aktif
                 if (count <= 3) {
                     basis = '30%'; headerSize = '1.8rem'; numberSize = '7rem'; tagSize = '1.3rem';
                 } else if (count <= 6) {
                     basis = '45%'; headerSize = '1.4rem'; numberSize = '5.5rem'; tagSize = '1.1rem';
-                } else if (count <= 8) {
-                    basis = '23%'; headerSize = '1.1rem'; numberSize = '4.5rem'; tagSize = '0.9rem';
                 } else {
-                    basis = count > 10 ? '18%' : '23%'; 
-                    headerSize = '0.9rem'; numberSize = '3.5rem'; tagSize = '0.8rem';
+                    basis = '23%'; headerSize = '1.1rem'; numberSize = '4.5rem'; tagSize = '0.9rem';
                 }
 
                 data.forEach(q => {
@@ -330,7 +323,7 @@
         }
 
         $(document).ready(function() {
-            // Load awal data untuk inisialisasi lastTokenMap agar tidak langsung bunyi saat page load
+            // Inisialisasi awal tanpa suara
             $.get('/api/display-data', function(data) {
                 if(data && data.length > 0) {
                     data.forEach(item => { 
@@ -345,10 +338,9 @@
 
             setInterval(() => {
                 const now = new Date();
-                const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
-                               now.getMinutes().toString().padStart(2, '0') + ':' + 
-                               now.getSeconds().toString().padStart(2, '0');
-                $('#clock-time').text(timeStr);
+                $('#clock-time').text(now.getHours().toString().padStart(2, '0') + ':' + 
+                                     now.getMinutes().toString().padStart(2, '0') + ':' + 
+                                     now.getSeconds().toString().padStart(2, '0'));
                 $('#clock-date').text(now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' }));
             }, 1000);
         });

@@ -93,12 +93,12 @@ class PetugasController extends Controller
     }
 
     /**
-     * Fitur Eksport Data Antrian (CSV) - Versi Perbaikan Kolom
+     * Fitur Eksport Data Antrian (CSV) - Versi Sinkron 5 Status
      */
     public function exportMasyarakat()
     {
-        // Ambil semua data antrian beserta relasinya
-        $data = Queue::with(['layanan', 'user', 'loket'])->orderBy('created_at', 'desc')->get();
+        // Mengambil data antrian beserta relasinya
+        $data = Queue::with(['layanan', 'petugas', 'loket'])->orderBy('created_at', 'desc')->get();
         
         $filename = "laporan_antrian_" . Carbon::now('Asia/Jakarta')->format('Ymd_Hi') . ".csv";
         
@@ -113,7 +113,7 @@ class PetugasController extends Controller
         $callback = function() use ($data) {
             $handle = fopen('php://output', 'w');
             
-            // Tambahkan BOM (Byte Order Mark) agar karakter UTF-8 terbaca benar di Excel
+            // Tambahkan BOM agar karakter terbaca benar di Excel
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
             
             // Header Kolom CSV
@@ -131,10 +131,27 @@ class PetugasController extends Controller
             foreach ($data as $row) {
                 $waktu = Carbon::parse($row->created_at)->timezone('Asia/Jakarta');
                 
-                // Cek NIK: Jika kosong (seperti pada Akte Kematian), tampilkan strip (-)
-                $nikExport = !empty($row->nik) ? "\t" . $row->nik : '-';
+                // NIK: Tambahkan tab agar tidak jadi format scientific di Excel
+                $nikExport = !empty($row->nik) ? $row->nik . "\t" : '-';
 
-                // Menulis baris data
+                /**
+                 * Logika Penentuan 5 Status untuk CSV
+                 * Menangani 'pengambilan' -> 'Pengambilan Dokumen'
+                 * Menangani 'dipanggil'/'diproses' -> 'Diproses'
+                 */
+                if ($row->status == 'selesai') {
+                    $statusLabel = 'Selesai';
+                } elseif ($row->status == 'pengambilan') {
+                    $statusLabel = 'Pengambilan Dokumen';
+                } elseif ($row->status == 'lewat') {
+                    $statusLabel = 'Dilewati';
+                } elseif (in_array($row->status, ['diproses', 'dipanggil']) || ($row->status == 'menunggu' && !empty($row->user_id))) {
+                    $statusLabel = 'Diproses';
+                } else {
+                    $statusLabel = 'Menunggu';
+                }
+
+                // Menulis baris data ke CSV
                 fputcsv($handle, [
                     $row->nomor_antrian,
                     $row->nama_pendaftar,
@@ -142,8 +159,8 @@ class PetugasController extends Controller
                     $row->layanan->nama_layanan ?? '-',
                     $waktu->translatedFormat('d F Y') . ' ' . $waktu->format('H:i'), 
                     $row->loket->nama_loket ?? '-',
-                    $row->user->name ?? 'Belum Diproses',
-                    ucfirst($row->status)
+                    $row->petugas->name ?? 'Belum Dipanggil',
+                    $statusLabel
                 ]);
             }
             fclose($handle);
@@ -153,7 +170,7 @@ class PetugasController extends Controller
     }
 
     /**
-     * Update Nama Loket (Opsional)
+     * Update Nama Loket
      */
     public function updateLoket(Request $request, $id)
     {

@@ -24,7 +24,12 @@ return new class extends Migration {
             // Menghubungkan ke tabel users (petugas yang memproses antrian)
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             
-            $table->enum('status', ['menunggu', 'dipanggil', 'lewat', 'selesai'])->default('menunggu');
+            /** * PERBAIKAN: Menggunakan string menggantikan ENUM agar tidak terjadi 
+             * error 'Data truncated' saat menerima status yang lebih panjang.
+             * Status yang didukung: 'menunggu', 'dipanggil', 'lewat', 'pengembalian', 'selesai'
+             */
+            $table->string('status')->default('menunggu');
+            
             $table->timestamp('panggil_at')->nullable();
             $table->timestamps(); 
         });

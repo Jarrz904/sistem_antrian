@@ -29,18 +29,41 @@ class DashboardController extends Controller
     }
 
     /**
-     * Logika internal untuk mengambil data statistik harian
+     * Logika internal untuk mengambil data statistik harian dengan 5 status
      */
     private function getStatsData()
     {
         $now = Carbon::now('Asia/Jakarta');
         $today = $now->toDateString();
 
+        /**
+         * Logika Status Diproses:
+         * Dihitung jika status di DB adalah 'diproses' atau 'dipanggil'
+         * ATAU status masih 'menunggu' tapi sudah ada petugas (user_id tidak null)
+         */
+        $diprosesCount = Queue::whereDate('created_at', $today)
+            ->where(function($q) {
+                $q->whereIn('status', ['diproses', 'dipanggil'])
+                  ->orWhere(function($sq) {
+                      $sq->where('status', 'menunggu')
+                         ->whereNotNull('user_id');
+                  });
+            })->count();
+
+        // Logika Status Menunggu Murni (Belum ada petugas)
+        $menungguCount = Queue::whereDate('created_at', $today)
+            ->where('status', 'menunggu')
+            ->whereNull('user_id')
+            ->count();
+
         return [
-            'totalAntrian' => Queue::whereDate('created_at', $today)->count(),
-            'selesai' => Queue::where('status', 'selesai')->whereDate('created_at', $today)->count(),
-            'lewat' => Queue::where('status', 'lewat')->whereDate('created_at', $today)->count(),
-            'dataAntrian' => Queue::with(['layanan', 'loket'])
+            'totalAntrian'       => Queue::whereDate('created_at', $today)->count(),
+            'selesai'            => Queue::where('status', 'selesai')->whereDate('created_at', $today)->count(),
+            'diproses'           => $diprosesCount,
+            'menunggu'           => $menungguCount,
+            'lewat'              => Queue::where('status', 'lewat')->whereDate('created_at', $today)->count(),
+            'pengambilanDokumen' => Queue::where('status', 'pengambilan')->whereDate('created_at', $today)->count(),
+            'dataAntrian'        => Queue::with(['layanan', 'loket', 'petugas'])
                 ->whereDate('created_at', $today)
                 ->orderBy('created_at', 'desc')
                 ->get()
@@ -49,76 +72,61 @@ class DashboardController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | FITUR KELOLA LAYANAN (CRUD) - DISESUAIKAN DENGAN MIGRATION USER
+    | FITUR KELOLA LAYANAN (CRUD)
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Menampilkan daftar semua layanan
-     */
     public function layananIndex()
     {
-        // Menggunakan 'prefix' sebagai kolom pengurutan sesuai Migration Anda
         $layanan = Layanan::orderBy('prefix', 'asc')->get();
         return view('admin.layanan', compact('layanan'));
     }
 
-    /**
-     * Menyimpan layanan baru ke database
-     */
     public function layananStore(Request $request)
     {
         $request->validate([
-            'nama_layanan' => 'required|string|max:255',
-            'kode_layanan' => 'required|alpha|max:1|unique:layanans,prefix', // Validasi ke kolom 'prefix'
+            'nama_layanan'    => 'required|string|max:255',
+            'kode_layanan'    => 'required|alpha|max:1|unique:layanans,prefix',
             'is_nik_required' => 'required|boolean',
-            'deskripsi' => 'nullable|string'
+            'deskripsi'       => 'nullable|string'
         ]);
 
         Layanan::create([
-            'nama_layanan' => $request->nama_layanan,
-            'prefix' => strtoupper($request->kode_layanan), // Simpan input 'kode_layanan' ke kolom 'prefix'
+            'nama_layanan'    => $request->nama_layanan,
+            'prefix'          => strtoupper($request->kode_layanan),
             'is_nik_required' => $request->is_nik_required,
-            'deskripsi' => $request->deskripsi,
-            // Jika Anda ingin menggunakan default icon bisa ditambahkan di sini
-            'icon' => 'fas fa-file-alt'
+            'deskripsi'       => $request->deskripsi,
+            'icon'            => 'fas fa-file-alt'
         ]);
 
         return back()->with('success', 'Layanan baru berhasil ditambahkan!');
     }
 
-    /**
-     * Memperbarui data layanan yang sudah ada
-     */
     public function layananUpdate(Request $request, $id)
     {
         $layanan = Layanan::findOrFail($id);
 
         $request->validate([
-            'nama_layanan' => 'required|string|max:255',
-            'kode_layanan' => 'required|alpha|max:1|unique:layanans,prefix,' . $id,
+            'nama_layanan'    => 'required|string|max:255',
+            'kode_layanan'    => 'required|alpha|max:1|unique:layanans,prefix,' . $id,
             'is_nik_required' => 'required|boolean',
-            'deskripsi' => 'nullable|string'
+            'deskripsi'       => 'nullable|string'
         ]);
 
         $layanan->update([
-            'nama_layanan' => $request->nama_layanan,
-            'prefix' => strtoupper($request->kode_layanan),
+            'nama_layanan'    => $request->nama_layanan,
+            'prefix'          => strtoupper($request->kode_layanan),
             'is_nik_required' => $request->is_nik_required,
-            'deskripsi' => $request->deskripsi,
+            'deskripsi'       => $request->deskripsi,
         ]);
 
         return back()->with('success', 'Data layanan berhasil diperbarui!');
     }
 
-    /**
-     * Menghapus layanan (dengan proteksi pengecekan relasi)
-     */
     public function layananDestroy($id)
     {
         $layanan = Layanan::findOrFail($id);
 
-        // Proteksi: Jangan hapus jika sudah ada antrian yang menggunakan layanan ini
         if ($layanan->queues()->exists()) {
             return back()->with('error', 'Layanan tidak bisa dihapus karena memiliki riwayat data antrian.');
         }
@@ -133,9 +141,6 @@ class DashboardController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Menampilkan halaman riwayat antrian dengan filter
-     */
     public function antrianIndex(Request $request)
     {
         $query = $this->applyFilters($request);
@@ -143,42 +148,35 @@ class DashboardController extends Controller
         $layanans = Layanan::all();
         $users = User::where('role', 'petugas')->get();
 
-        // TAMBAHKAN LOGIKA INI:
-        // Mengambil huruf pertama dari nomor_antrian yang unik untuk filter dropdown
         $prefixes = Queue::selectRaw('SUBSTRING(nomor_antrian, 1, 1) as prefix')
             ->distinct()
             ->orderBy('prefix')
             ->pluck('prefix');
 
-        // Masukkan 'prefixes' ke dalam compact()
         return view('admin.antrian_index', compact('dataAntrian', 'layanans', 'users', 'prefixes'));
     }
 
-    /**
-     * Mengupdate data masyarakat di dalam antrian
-     */
     public function updateAntrian(Request $request, $id)
     {
         $request->validate([
             'nama_pendaftar' => 'required|string|max:255',
-            'nik' => 'required|numeric|digits:16',
-            'layanan_id' => 'required|exists:layanans,id',
+            'nik'            => 'nullable|numeric|digits:16',
+            'layanan_id'     => 'required|exists:layanans,id',
+            'status'         => 'required|in:menunggu,diproses,dipanggil,selesai,lewat,pengambilan'
         ]);
 
         $antrian = Queue::findOrFail($id);
         $antrian->update([
             'nama_pendaftar' => $request->nama_pendaftar,
-            'nik' => $request->nik,
-            'layanan_id' => $request->layanan_id,
-            'updated_at' => Carbon::now('Asia/Jakarta')
+            'nik'            => $request->nik,
+            'layanan_id'     => $request->layanan_id,
+            'status'         => $request->status,
+            'updated_at'     => Carbon::now('Asia/Jakarta')
         ]);
 
         return back()->with('success', 'Data masyarakat berhasil diperbarui!');
     }
 
-    /**
-     * Menghapus record antrian
-     */
     public function deleteAntrian($id)
     {
         $antrian = Queue::findOrFail($id);
@@ -187,9 +185,6 @@ class DashboardController extends Controller
         return back()->with('success', 'Data antrian berhasil dihapus!');
     }
 
-    /**
-     * Mereset seluruh tampilan statistik hari ini menjadi nol
-     */
     public function resetDisplay()
     {
         try {
@@ -208,9 +203,6 @@ class DashboardController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Export data antrian ke format CSV
-     */
     public function exportCSV(Request $request)
     {
         $fileName = 'rekap_antrian_' . Carbon::now('Asia/Jakarta')->format('Y-m-d_H-i') . '.csv';
@@ -218,32 +210,46 @@ class DashboardController extends Controller
         $antrian = $query->get();
 
         $headers = [
-            "Content-type" => "text/csv",
+            "Content-type"        => "text/csv",
             "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
         ];
 
         $columns = ['No Antrian', 'Nama Pemohon', 'NIK', 'Layanan', 'Tanggal', 'Jam', 'Loket', 'Petugas', 'Status'];
 
         $callback = function () use ($antrian, $columns) {
             $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM
             fputcsv($file, $columns, ',');
 
             foreach ($antrian as $q) {
                 $date = Carbon::parse($q->created_at)->timezone('Asia/Jakarta');
+                
+                // Logika Label Status untuk CSV
+                if ($q->status == 'selesai') {
+                    $statusLabel = 'Selesai';
+                } elseif ($q->status == 'pengambilan') {
+                    $statusLabel = 'Pengambilan Dokumen';
+                } elseif ($q->status == 'lewat') {
+                    $statusLabel = 'Dilewati';
+                } elseif (in_array($q->status, ['diproses', 'dipanggil']) || ($q->status == 'menunggu' && !empty($q->user_id))) {
+                    $statusLabel = 'Diproses';
+                } else {
+                    $statusLabel = 'Menunggu';
+                }
+
                 fputcsv($file, [
                     $q->nomor_antrian,
                     $q->nama_pendaftar,
-                    $q->nik . "\t",
+                    $q->nik . "\t", 
                     $q->layanan->nama_layanan ?? '-',
                     $date->translatedFormat('d F Y'),
                     $date->format('H:i'),
-                    $q->loket->nama_loket ?? 'Belum Diproses',
-                    $q->user->name ?? 'Belum Dipanggil',
-                    ucfirst($q->status)
+                    $q->loket->nama_loket ?? '-',
+                    $q->petugas->name ?? 'Belum Dipanggil',
+                    $statusLabel
                 ], ',');
             }
             fclose($file);
@@ -252,12 +258,9 @@ class DashboardController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    /**
-     * Helper Function: Menerapkan filter pencarian data
-     */
     private function applyFilters(Request $request)
     {
-        $query = Queue::with(['layanan', 'loket', 'user']);
+        $query = Queue::with(['layanan', 'loket', 'petugas']);
 
         if ($request->filled('prefix')) {
             $query->where('nomor_antrian', 'like', $request->prefix . '%');
@@ -269,6 +272,14 @@ class DashboardController extends Controller
 
         if ($request->filled('petugas_id')) {
             $query->where('user_id', $request->petugas_id);
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status == 'diproses') {
+                $query->whereIn('status', ['diproses', 'dipanggil']);
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->filled('tgl_mulai') && $request->filled('tgl_selesai')) {

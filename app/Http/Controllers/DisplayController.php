@@ -18,7 +18,7 @@ class DisplayController extends Controller
 
     /**
      * Mengambil data antrian untuk monitor display.
-     * Prefix disesuaikan berdasarkan layanan yang ditangani loket.
+     * Mendukung tampilan untuk loket layanan biasa dan loket pengembalian.
      */
     public function getDisplayData() {
         // Ambil semua petugas yang bertugas di loket hari ini
@@ -32,30 +32,44 @@ class DisplayController extends Controller
         foreach ($petugasAktif as $petugas) {
             /**
              * MENGAMBIL PREFIX PER LAYANAN:
-             * Kita ambil prefix dari tabel layanan yang terhubung dengan petugas.
-             * Jika tidak ada, default ke 'A'.
+             * Default ke 'A' jika petugas tidak memiliki layanan terkait.
              */
             $prefixLayanan = $petugas->layanan->prefix ?? 'A';
 
             /**
              * LOGIKA & SINKRONISASI:
-             * Mencari antrian yang sedang dipanggil, selesai, atau lewat di loket spesifik.
+             * Mencari antrian terakhir yang diproses di loket ini.
+             * Menambahkan status 'pengembalian' agar terpantau di monitor jika loket tsb
+             * sedang melayani pengambilan dokumen.
              */
             $lastQueue = Queue::with('layanan')
                 ->where('loket_id', $petugas->loket_id)
                 ->whereDate('created_at', Carbon::today())
-                ->whereIn('status', ['dipanggil', 'selesai', 'lewat'])
-                ->orderByRaw("FIELD(status, 'dipanggil', 'selesai', 'lewat') ASC") 
+                ->whereIn('status', ['dipanggil', 'selesai', 'lewat', 'pengembalian'])
+                ->orderByRaw("FIELD(status, 'dipanggil', 'pengembalian', 'selesai', 'lewat') ASC") 
                 ->orderBy('updated_at', 'desc')
                 ->first();
 
             /**
              * PENENTUAN NOMOR TAMPIL:
-             * Jika ada data antrian, tampilkan nomornya (misal C001).
-             * Jika loket masih kosong (pagi hari), tampilkan PrefixLayanan + 000 (misal C000).
+             * Jika loket belum mulai memanggil (pagi hari), tampilkan format 000.
              */
             $nomorTampil = $lastQueue ? $lastQueue->nomor_antrian : $prefixLayanan . '000';
-            $layananTampil = $lastQueue ? $lastQueue->layanan->nama_layanan : ($petugas->layanan->nama_layanan ?? 'SIAP MELAYANI');
+            
+            /**
+             * PENENTUAN TEXT LAYANAN:
+             * Jika sedang melayani, tampilkan nama layanannya. 
+             * Khusus untuk status 'pengembalian', kita beri keterangan tambahan.
+             */
+            $labelLayanan = 'SIAP MELAYANI';
+            if ($lastQueue) {
+                $labelLayanan = $lastQueue->layanan->nama_layanan;
+                if ($lastQueue->status == 'pengembalian') {
+                    $labelLayanan = 'Menunggu di ' . $labelLayanan;
+                }
+            } elseif ($petugas->layanan) {
+                $labelLayanan = $petugas->layanan->nama_layanan;
+            }
 
             $displayData[] = [
                 'id_antrian'    => $lastQueue->id ?? null,
@@ -65,14 +79,17 @@ class DisplayController extends Controller
                 ],
                 'nomor_antrian' => $nomorTampil,
                 'layanan' => [
-                    'nama_layanan' => $layananTampil
+                    'nama_layanan' => $labelLayanan
                 ],
-                // Status 'dipanggil' memicu suara di JS monitor
+                /** * Status 'dipanggil' memicu trigger suara di JavaScript Monitor.
+                 * Kita pastikan hanya status 'dipanggil' yang memicu suara bell.
+                 */
                 'status'        => ($lastQueue && $lastQueue->status == 'dipanggil') ? 'dipanggil' : 'standby',
                 
                 /**
-                 * updated_token (microtime) tetap dipertahankan. 
-                 * Menggunakan updated_at agar monitor tahu kapan harus memicu suara panggilan baru.
+                 * updated_token digunakan sebagai ID unik perubahan.
+                 * Monitor akan membandingkan token ini, jika berbeda dari data sebelumnya,
+                 * maka monitor akan menjalankan fungsi panggil/animasi.
                  */
                 'updated_token' => $lastQueue ? $lastQueue->updated_at->format('Y-m-d H:i:s.u') : null,
             ];

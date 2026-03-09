@@ -13,7 +13,7 @@
                     <div class="mb-4">
                         <span class="badge bg-soft-primary text-primary px-3 py-2 rounded-pill mb-2">IDENTITAS LOKET</span>
                         <h2 class="fw-800 text-dark mb-0">{{ auth()->user()->loket->nama_loket ?? 'Loket Umum' }}</h2>
-                        <p class="text-primary fw-bold mb-0">{{ auth()->user()->layanan->nama_layanan ?? 'Semua Layanan' }}</p>
+                        <p class="text-primary fw-bold mb-0">{{ auth()->user()->layanan?->nama_layanan ?? 'Unit Pengambilan Dokumen' }}</p>
                         <p class="text-muted small">Petugas: {{ auth()->user()->name }}</p>
                     </div>
                     
@@ -27,20 +27,39 @@
                                 <div class="spinner-grow spinner-grow-sm text-primary" role="status" style="position: absolute; top: 15px; right: 15px;"></div>
                                 
                                 <h1 class="display-1 fw-800 text-primary mb-0">{{ $current->nomor_antrian }}</h1>
-                                <p class="fw-bold text-dark mb-0 mt-2">{{ $current->layanan->nama_layanan }}</p>
-                                <small class="text-muted">An. {{ $current->nama_pendaftar }}</small>
+                                <p class="fw-bold text-dark mb-0 mt-2">{{ $current->layanan?->nama_layanan ?? 'Lintas Layanan' }}</p>
+                                <div class="mt-2">
+                                    <h5 class="mb-0 fw-bold">{{ $current->nama_pendaftar }}</h5>
+                                    <span class="badge bg-secondary">{{ $current->nik ?? 'Tanpa NIK / Non-Penduduk' }}</span>
+                                </div>
                             </div>
 
                             <div class="d-grid gap-3">
-                                {{-- Tombol 1: Selesai (Mengubah status jadi selesai tanpa panggil baru) --}}
-                                <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0">
-                                        <i class="fas fa-check-circle me-2"></i> SELESAI
-                                    </button>
-                                </form>
+                                {{-- LOGIKA TOMBOL DINAMIS --}}
+                                @php
+                                    $isLoketPengambilan = is_null(auth()->user()->layanan_id);
+                                    $isRekamKtp = (auth()->user()->layanan?->nama_layanan == 'Pelayanan Rekam KTP');
+                                @endphp
 
-                                {{-- Tombol 2: Nomor Berikutnya (Selesai & Panggil yang baru) --}}
+                                @if($isLoketPengambilan || $isRekamKtp)
+                                    {{-- Hanya Selesai & Arsip untuk Pengambilan & Rekam KTP --}}
+                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0">
+                                            <i class="fas fa-check-double me-2"></i> SELESAI & ARSIP
+                                        </button>
+                                    </form>
+                                @else
+                                    {{-- Layanan Umum lainnya: Lempar ke Pengembalian --}}
+                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'pengambilan']) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold py-3 shadow-sm border-0 text-white">
+                                            <i class="fas fa-file-export me-2"></i> SELESAI & KE PENGAMBILAN
+                                        </button>
+                                    </form>
+                                @endif
+
+                                {{-- Tombol Panggil Berikutnya --}}
                                 <form action="{{ route('petugas.panggil') }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-lg py-3 border-0" style="background: linear-gradient(45deg, #0d6efd, #0043a8);">
@@ -48,7 +67,6 @@
                                     </button>
                                 </form>
                                 
-                                {{-- Tombol 3: Lewati Nomor --}}
                                 <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3">
@@ -58,13 +76,12 @@
                             </div>
 
                         @elseif($antrian->count() > 0)
-                            {{-- KONDISI 2: JIKA TIDAK ADA YANG DILAYANI TAPI ADA DAFTAR TUNGGU --}}
                             <div class="py-4">
                                 <div class="mb-3">
                                     <i class="fas fa-user-clock fa-4x text-primary opacity-25"></i>
                                 </div>
                                 <h5 class="fw-bold">Antrian Tersedia</h5>
-                                <p class="text-muted small">Ada <strong>{{ $antrian->count() }}</strong> orang menunggu. Silakan panggil antrian.</p>
+                                <p class="text-muted small">Ada <strong id="wait-count">{{ $antrian->count() }}</strong> orang menunggu.</p>
                             </div>
                             
                             <form action="{{ route('petugas.panggil') }}" method="POST" class="mt-2">
@@ -74,13 +91,12 @@
                                 </button>
                             </form>
                         @else
-                            {{-- KONDISI 3: JIKA BENAR-BENAR KOSONG --}}
-                            <div class="py-4">
+                            <div id="empty-state" class="py-4">
                                 <div class="mb-3">
                                     <i class="fas fa-mug-hot fa-4x text-light"></i>
                                 </div>
                                 <h5 class="fw-bold text-muted">Belum Ada Antrian</h5>
-                                <p class="text-muted small">Daftar tunggu kosong untuk saat ini.</p>
+                                <p class="text-muted small">Daftar tunggu saat ini kosong.</p>
                             </div>
                         @endif
                     </div>
@@ -90,10 +106,12 @@
 
         {{-- DAFTAR ANTRIAN --}}
         <div class="col-md-8">
-            {{-- Tabel Menunggu --}}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold text-primary"><i class="fas fa-list-ol me-2"></i> Daftar Tunggu (Hari Ini)</h5>
+                    <h5 class="mb-0 fw-bold text-primary">
+                        <i class="fas fa-list-ol me-2"></i> 
+                        {{ is_null(auth()->user()->layanan_id) ? 'Siap Diambil (Hasil Layanan)' : 'Daftar Tunggu Unit' }}
+                    </h5>
                     <span id="count-menunggu" class="badge bg-danger rounded-pill px-3">{{ $antrian->count() }} Orang</span>
                 </div>
                 <div class="card-body p-0">
@@ -101,25 +119,27 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead class="bg-light">
                                 <tr>
-                                    <th class="ps-4" width="150">No. Antrian</th>
-                                    <th>Nama Pendaftar</th>
+                                    <th class="ps-4" width="120">No</th>
                                     <th>NIK</th>
-                                    <th class="text-center">Jam Daftar</th>
+                                    <th>Nama Pendaftar</th>
+                                    <th>Layanan Asal</th>
+                                    <th class="text-center">Jam</th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-menunggu">
                                 @forelse($antrian as $a)
                                 <tr>
                                     <td class="ps-4"><span class="fw-bold text-primary h5 mb-0">{{ $a->nomor_antrian }}</span></td>
+                                    <td><code class="text-dark">{{ $a->nik ?? '-' }}</code></td>
                                     <td class="fw-bold">{{ $a->nama_pendaftar }}</td>
-                                    <td><small class="text-muted">{{ $a->nik ?? '---' }}</small></td>
-                                    <td class="text-center small text-muted">{{ $a->created_at->format('H:i') }}</td>
+                                    <td><span class="badge bg-info text-dark">{{ $a->layanan?->nama_layanan ?? 'N/A' }}</span></td>
+                                    <td class="text-center small text-muted">
+                                        {{ is_null(auth()->user()->layanan_id) ? $a->updated_at->format('H:i') : $a->created_at->format('H:i') }}
+                                    </td>
                                 </tr>
                                 @empty
                                 <tr class="empty-row">
-                                    <td colspan="4" class="text-center py-5">
-                                        <p class="text-muted mb-0">Belum ada antrian baru hari ini.</p>
-                                    </td>
+                                    <td colspan="5" class="text-center py-5 text-muted">Belum ada antrian.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -128,7 +148,7 @@
                 </div>
             </div>
 
-            {{-- Tabel Dilewati --}}
+            {{-- TABEL DILEWATI --}}
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3 border-0">
                     <h5 class="mb-0 fw-bold text-secondary"><i class="fas fa-history me-2"></i> Baru Saja Dilewati</h5>
@@ -138,8 +158,8 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead class="bg-light">
                                 <tr>
-                                    <th class="ps-4" width="150">No. Antrian</th>
-                                    <th>Nama Pendaftar</th>
+                                    <th class="ps-4" width="120">No</th>
+                                    <th>NIK / Nama</th>
                                     <th class="text-end pe-4">Aksi Balas</th>
                                 </tr>
                             </thead>
@@ -149,7 +169,7 @@
                                     <td class="ps-4"><span class="fw-bold text-danger">{{ $s->nomor_antrian }}</span></td>
                                     <td>
                                         <div class="fw-bold">{{ $s->nama_pendaftar }}</div>
-                                        <small class="text-muted" style="font-size: 10px;">Jam: {{ $s->updated_at->format('H:i') }}</small>
+                                        <small class="text-muted">{{ $s->nik ?? 'Tanpa NIK' }} | {{ $s->updated_at->format('H:i') }}</small>
                                     </td>
                                     <td class="text-end pe-4">
                                         <form action="{{ route('petugas.panggilUlang', $s->id) }}" method="POST">
@@ -162,7 +182,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="3" class="text-center py-4 text-muted small">Tidak ada nomor yang dilewati.</td>
+                                    <td colspan="3" class="text-center py-4 text-muted small">Tidak ada nomor dilewati.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -174,47 +194,56 @@
     </div>
 </div>
 
-{{-- Script Realtime AJAX Polling --}}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+    let lastAntrianCount = {{ $antrian->count() }};
+    let isCurrentEmpty = {{ $current ? 'false' : 'true' }};
+
     function fetchAntrianRealtime() {
         $.ajax({
             url: "{{ route('petugas.dashboard') }}",
             type: "GET",
             dataType: "json",
             success: function(response) {
-                // Catatan: Jika Anda menggunakan AJAX, pastikan response JSON juga 
-                // mengirimkan data 'current' agar tombol bisa update otomatis tanpa refresh.
-                
                 $('#count-menunggu').text(response.count + ' Orang');
+                $('#wait-count').text(response.count);
 
-                // Update Tabel Menunggu
+                if (isCurrentEmpty && response.count > 0 && lastAntrianCount === 0) {
+                    location.reload(); 
+                }
+                lastAntrianCount = response.count;
+
                 let htmlMenunggu = '';
                 if (response.antrian.length > 0) {
                     response.antrian.forEach(function(a) {
+                        let namaLayanan = a.layanan ? a.layanan.nama_layanan : '---';
+                        let nikDisplay = a.nik ? a.nik : '-';
                         htmlMenunggu += `
                             <tr>
                                 <td class="ps-4"><span class="fw-bold text-primary h5 mb-0">${a.nomor_antrian}</span></td>
+                                <td><code class="text-dark">${nikDisplay}</code></td>
                                 <td class="fw-bold">${a.nama_pendaftar}</td>
-                                <td><small class="text-muted">${a.nik ?? '---'}</small></td>
+                                <td><span class="badge bg-info text-dark">${namaLayanan}</span></td>
                                 <td class="text-center small text-muted">Baru saja</td>
                             </tr>`;
                     });
                 } else {
-                    htmlMenunggu = '<tr><td colspan="4" class="text-center py-5">Belum ada antrian baru.</td></tr>';
+                    htmlMenunggu = '<tr><td colspan="5" class="text-center py-5 text-muted small">Belum ada antrian.</td></tr>';
                 }
                 $('#tbody-menunggu').html(htmlMenunggu);
 
-                // Update Tabel Dilewati
                 let htmlSkipped = '';
                 if (response.skipped.length > 0) {
                     response.skipped.forEach(function(s) {
                         let recallUrl = "{{ route('petugas.panggilUlang', ':id') }}".replace(':id', s.id);
-                        
+                        let nikS = s.nik ? s.nik : 'Tanpa NIK';
                         htmlSkipped += `
                             <tr>
                                 <td class="ps-4"><span class="fw-bold text-danger">${s.nomor_antrian}</span></td>
-                                <td><div class="fw-bold">${s.nama_pendaftar}</div></td>
+                                <td>
+                                    <div class="fw-bold">${s.nama_pendaftar}</div>
+                                    <small class="text-muted">${nikS}</small>
+                                </td>
                                 <td class="text-end pe-4">
                                     <form action="${recallUrl}" method="POST" class="d-inline">
                                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
@@ -226,7 +255,7 @@
                             </tr>`;
                     });
                 } else {
-                    htmlSkipped = '<tr><td colspan="3" class="text-center py-4 text-muted small">Tidak ada nomor yang dilewati.</td></tr>';
+                    htmlSkipped = '<tr><td colspan="3" class="text-center py-4 text-muted small">Tidak ada nomor dilewati.</td></tr>';
                 }
                 $('#tbody-skipped').html(htmlSkipped);
             }
@@ -234,7 +263,7 @@
     }
 
     $(document).ready(function() {
-        setInterval(fetchAntrianRealtime, 3000);
+        setInterval(fetchAntrianRealtime, 5000);
     });
 </script>
 
@@ -243,5 +272,7 @@
     .bg-soft-primary { background-color: rgba(13, 110, 253, 0.1); }
     .rounded-4 { border-radius: 1.5rem !important; }
     .table thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .btn-lg { border-radius: 12px; }
+    code { font-family: 'Courier New', Courier, monospace; color: #e83e8c; }
 </style>
 @endsection
