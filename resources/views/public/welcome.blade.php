@@ -23,6 +23,7 @@
             overflow-x: hidden; 
         }
 
+        /* Background Gradient Bergerak */
         .full-bg {
             position: fixed;
             top: 0;
@@ -54,6 +55,7 @@
             max-width: 1200px;
         }
 
+        /* Glassmorphism Card */
         .card-custom {
             background: var(--glass-bg);
             backdrop-filter: blur(15px);
@@ -65,6 +67,8 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            margin: 0 auto;
+            max-width: 500px;
         }
 
         .card-custom:hover {
@@ -93,7 +97,6 @@
         }
 
         .icon-primary { background: linear-gradient(135deg, #007bff, #00d4ff); }
-        .icon-dark { background: linear-gradient(135deg, #1e293b, #475569); }
 
         .btn-custom {
             padding: 15px 30px;
@@ -108,6 +111,7 @@
             color: white;
         }
 
+        /* Footer Info */
         .footer-info {
             margin-top: 50px;
             font-weight: 700;
@@ -117,12 +121,44 @@
         /* Modal Styles */
         .modal-content { border-radius: 25px; border: none; }
         
+        /* OPTIMASI CETAK */
         @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
-            #printArea { 
-                position: fixed; left: 0; top: 0; width: 100%; 
-                text-align: center; padding: 30px; border: none !important;
+            @page {
+                margin: 0.5cm; /* Memberikan sedikit ruang agar tidak terpotong di printer standar */
+                size: auto;
+            }
+            body {
+                background: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            body * {
+                visibility: hidden;
+            }
+            #printArea, #printArea * {
+                visibility: visible;
+                color: #000000 !important; /* Hitam Pekat */
+            }
+            #printArea {
+                position: absolute;
+                left: 50%;
+                top: 0;
+                transform: translateX(-50%);
+                width: 100%;
+                max-width: 450px; /* Cocok untuk berbagai ukuran printer */
+                border: 2px solid #000 !important;
+                padding: 30px !important;
+                background-color: white !important;
+                box-shadow: none !important;
+                border-radius: 15px !important;
+            }
+            hr {
+                border-top: 2px solid #000 !important;
+                opacity: 1 !important;
+                margin: 15px 0 !important;
+            }
+            .text-muted {
+                color: #000 !important; /* Ubah abu-abu jadi hitam saat cetak agar tajam */
             }
         }
 
@@ -149,8 +185,8 @@
                 <p class="lead text-secondary fw-bold px-3">Pelayanan Cepat, Nyaman, dan Transparan</p>
             </div>
 
-            <div class="row g-4 g-lg-5 justify-content-center">
-                <div class="col-12 col-md-6 col-lg-5">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-8 col-lg-6">
                     <div class="card card-custom shadow-sm p-4 text-center">
                         <div class="card-body py-4">
                             <div class="icon-circle icon-primary">
@@ -160,21 +196,6 @@
                             <p class="text-secondary mb-4">Daftar secara mandiri untuk mendapatkan nomor urut pelayanan hari ini.</p>
                             <a href="{{ route('user.dashboard') }}" class="btn btn-primary-custom btn-custom btn-lg w-100 shadow">
                                 Mulai Sekarang <i class="fas fa-arrow-right ms-2"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-md-6 col-lg-5">
-                    <div class="card card-custom shadow-sm p-4 text-center">
-                        <div class="card-body py-4">
-                            <div class="icon-circle icon-dark">
-                                <i class="fas fa-desktop"></i>
-                            </div>
-                            <h2 class="fw-bold mb-3">Monitor Display</h2>
-                            <p class="text-secondary mb-4">Pantau antrian yang sedang dipanggil melalui layar monitor display.</p>
-                            <a href="{{ route('display') }}" class="btn btn-dark btn-custom btn-lg w-100 shadow" style="background: #1e293b; border: none;">
-                                Buka Monitor <i class="fas fa-tv ms-2"></i>
                             </a>
                         </div>
                     </div>
@@ -198,22 +219,35 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content text-center p-4 shadow-lg">
                 <div class="modal-body">
-                    <div class="text-success mb-3">
+                    <div class="text-success mb-3 no-print">
                         <i class="fas fa-check-circle fa-4x"></i>
                     </div>
-                    <h3 class="fw-bold">Antrian Berhasil!</h3>
+                    <h3 class="fw-bold no-print">Antrian Berhasil!</h3>
                     
-                    <div id="printArea" class="border rounded-4 p-3 my-3 bg-light text-center">
-                        <p class="text-muted small mb-1">NOMOR ANTRIAN</p>
-                        <h1 class="display-2 fw-bold text-primary mb-0">{{ session('success_data')['nomor'] }}</h1>
+                    <div id="printArea" class="border rounded-4 p-4 my-3 bg-light text-center">
+                        <p class="text-dark small mb-1 fw-bold" style="letter-spacing: 2px;">NOMOR ANTRIAN</p>
+                        <h1 class="display-1 fw-bold text-primary mb-0" style="font-size: 80px; line-height: 1;">
+                            {{ session('success_data')['nomor'] }}
+                        </h1>
                         <hr>
-                        <p class="fw-bold mb-0 text-dark">{{ session('success_data')['layanan'] }}</p>
-                        <p class="mb-0 text-dark">{{ session('success_data')['nama'] }}</p>
-                        <small class="text-muted">{{ session('success_data')['waktu'] }}</small>
+                        <h4 class="fw-bold mb-1 text-dark" style="text-transform: uppercase;">
+                            {{ session('success_data')['layanan'] }}
+                        </h4>
+                        <p class="mb-2 text-dark fw-bold" style="font-size: 1.1rem;">
+                            {{ session('success_data')['nama'] }}
+                        </p>
+                        <div class="border-top pt-2 mt-2">
+                            <p class="mb-0 text-dark fw-bold" style="font-size: 14px;">
+                                <i class="fas fa-calendar-alt me-1"></i> {{ date('d-m-Y') }}
+                            </p>
+                            <p class="mb-0 text-dark fw-bold" style="font-size: 14px;">
+                                <i class="fas fa-clock me-1"></i> {{ session('success_data')['waktu'] }} WIB
+                            </p>
+                        </div>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <button onclick="window.print()" class="btn btn-primary btn-lg rounded-pill fw-bold shadow">
+                    <div class="d-grid gap-2 no-print">
+                        <button onclick="window.print()" class="btn btn-primary btn-lg rounded-pill fw-bold shadow py-3">
                             <i class="fas fa-print me-2"></i>CETAK NOMOR
                         </button>
                         <button type="button" class="btn btn-light btn-lg rounded-pill fw-bold border" data-bs-dismiss="modal">
@@ -229,7 +263,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Trigger modal sukses otomatis jika data session tersedia
         @if(session('success_data'))
             document.addEventListener('DOMContentLoaded', function() {
                 const elSukses = document.getElementById('modalSukses');
