@@ -7,7 +7,7 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -23,7 +23,6 @@
             overflow-x: hidden; 
         }
 
-        /* Background Gradient Bergerak */
         .full-bg {
             position: fixed;
             top: 0;
@@ -55,7 +54,6 @@
             max-width: 1200px;
         }
 
-        /* Glassmorphism Card */
         .card-custom {
             background: var(--glass-bg);
             backdrop-filter: blur(15px);
@@ -67,8 +65,6 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            margin: 0 auto;
-            max-width: 500px; 
         }
 
         .card-custom:hover {
@@ -97,6 +93,7 @@
         }
 
         .icon-primary { background: linear-gradient(135deg, #007bff, #00d4ff); }
+        .icon-dark { background: linear-gradient(135deg, #1e293b, #475569); }
 
         .btn-custom {
             padding: 15px 30px;
@@ -111,7 +108,6 @@
             color: white;
         }
 
-        /* Footer Info */
         .footer-info {
             margin-top: 50px;
             font-weight: 700;
@@ -121,53 +117,13 @@
         /* Modal Styles */
         .modal-content { border-radius: 25px; border: none; }
         
-        /* PENGATURAN CETAK DIPERTEBAL, HITAM PEKAT, FULL & NAIK KE ATAS */
         @media print {
-            @page { 
-                margin: 0; /* Hilangkan margin kertas bawaan browser */
-            }
-            body { 
-                margin: 0; 
-                padding: 0;
-                background-color: #fff !important; 
-            }
-            body * { 
-                visibility: hidden; 
-            }
-            #printArea, #printArea * { 
-                visibility: visible; 
-                color: #000000 !important; /* Hitam pekat */
-                font-weight: 900 !important; /* Paling tebal */
-                text-shadow: none !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible;color: #000 !important; /* Hitam Pekat */
+                font-weight: 800 !important; /* Sangat Tebal */ }
             #printArea { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 100% !important; /* Full mengikuti lebar asli kertas thermal */
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-                text-align: center; 
-                /* Padding dinolkan agar teks mentok ke atas */
-                padding: 0 5px 10px 5px !important; 
-                margin: 0 !important;
-                border: none !important;
-            }
-            /* Menghilangkan margin bawaan elemen agar tidak ada spasi kosong di atas */
-            #printArea p:first-child {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-            }
-            hr { 
-                border-top: 3px solid #000000 !important; 
-                opacity: 1 !important; 
-                margin: 5px 0 !important; /* Jarak garis dirapatkan */
-            }
-            /* Penyesuaian font ukuran tanggal agar tidak turun baris */
-            .waktu-print {
-                font-size: 0.9rem !important;
+                position: fixed; left: 0; top: 0; width: 100%; 
+                text-align: center; padding: 30px; border: none !important;
             }
         }
 
@@ -194,8 +150,8 @@
                 <p class="lead text-secondary fw-bold px-3">Pelayanan Cepat, Nyaman, dan Transparan</p>
             </div>
 
-            <div class="row justify-content-center">
-                <div class="col-12 col-md-8 col-lg-6">
+            <div class="row g-4 g-lg-5 justify-content-center">
+                <div class="col-12 col-md-6 col-lg-5">
                     <div class="card card-custom shadow-sm p-4 text-center">
                         <div class="card-body py-4">
                             <div class="icon-circle icon-primary">
@@ -209,6 +165,8 @@
                         </div>
                     </div>
                 </div>
+
+
             </div>
 
             <div class="footer-info text-center">
@@ -228,26 +186,21 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content text-center p-4 shadow-lg">
                 <div class="modal-body">
-                    <div class="text-success mb-3 no-print">
+                    <div class="text-success mb-3">
                         <i class="fas fa-check-circle fa-4x"></i>
                     </div>
-                    <h3 class="fw-bold no-print">Antrian Berhasil!</h3>
+                    <h3 class="fw-bold">Antrian Berhasil!</h3>
                     
                     <div id="printArea" class="border rounded-4 p-3 my-3 bg-light text-center">
-                        <p class="text-dark small mb-1 fw-bold">NOMOR ANTRIAN</p>
-                        
-                        <h1 class="display-2 fw-bold text-dark mb-0">{{ session('success_data')['nomor'] }}</h1>
-                        
+                        <p class="text-muted small mb-1">NOMOR ANTRIAN</p>
+                        <h1 class="display-2 fw-bold text-primary mb-0">{{ session('success_data')['nomor'] }}</h1>
                         <hr>
                         <p class="fw-bold mb-0 text-dark">{{ session('success_data')['layanan'] }}</p>
-                        <p class="mb-0 text-dark fw-bold">{{ session('success_data')['nama'] }}</p>
-                        
-                        <p class="mt-2 mb-0 text-dark fw-bold waktu-print">
-                            {{ date('d F Y') }} | {{ session('success_data')['waktu'] }}
-                        </p>
+                        <p class="mb-0 text-dark">{{ session('success_data')['nama'] }}</p>
+                        <small class="text-muted">{{ session('success_data')['waktu'] }}</small>
                     </div>
 
-                    <div class="d-grid gap-2 no-print">
+                    <div class="d-grid gap-2">
                         <button onclick="window.print()" class="btn btn-primary btn-lg rounded-pill fw-bold shadow">
                             <i class="fas fa-print me-2"></i>CETAK NOMOR
                         </button>
@@ -264,6 +217,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        // Trigger modal sukses otomatis jika data session tersedia
         @if(session('success_data'))
             document.addEventListener('DOMContentLoaded', function() {
                 const elSukses = document.getElementById('modalSukses');
