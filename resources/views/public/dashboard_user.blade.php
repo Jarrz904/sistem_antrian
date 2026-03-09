@@ -59,13 +59,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden; /* Mencegah overflow keluar dari layar */
+            overflow: hidden;
         }
 
-        /* LOGIC GRID DINAMIS */
         .services-grid {
             display: grid;
-            /* Default: 3 Kolom */
             grid-template-columns: repeat(3, 1fr);
             grid-auto-rows: 1fr;
             gap: 2vh 2vw;
@@ -73,7 +71,6 @@
             height: 100%;
         }
 
-        /* Otomatis 4 Kolom jika data lebih dari 6 (Triggered by PHP Class) */
         .grid-layout-wide {
             grid-template-columns: repeat(4, 1fr) !important;
         }
@@ -109,7 +106,6 @@
             flex-shrink: 0;
         }
 
-        /* UKURAN TEXT DIPERBESAR */
         .card-title {
             font-weight: 800;
             font-size: clamp(1.3rem, 2.8vh, 1.8rem);
@@ -163,7 +159,6 @@
             font-size: 1rem;
         }
 
-        /* Modal Styles */
         .modal-content { border-radius: 35px; border: none; }
         .form-control-custom { 
             border-radius: 18px; padding: 18px; 
@@ -203,7 +198,7 @@
                 </div>
                 <button type="button" 
                         class="btn btn-primary btn-pilih" 
-                        onclick="pilihLayanan('{{ $l->id }}', '{{ $l->nama_layanan }}', {{ $l->is_nik_required ? 'true' : 'false' }})">
+                        onclick="pilihLayanan('{{ $l->id }}', '{{ $l->nama_layanan }}')">
                     AMBIL NOMOR
                 </button>
             </div>
@@ -218,7 +213,7 @@
             <div class="modal-body p-5">
                 <div class="text-center mb-4">
                     <h1 class="fw-800 text-primary" id="titleLayanan" style="font-size: 2.2rem;">DETAIL ANTRIAN</h1>
-                    <p class="text-muted fw-bold fs-5">Lengkapi data diri Anda</p>
+                    <p class="text-muted fw-bold fs-5">Lengkapi data diri Anda secara benar</p>
                 </div>
 
                 <form action="{{ route('user.store') }}" method="POST" id="formAntrian">
@@ -230,18 +225,12 @@
                         <input type="text" name="nama" class="form-control form-control-custom" placeholder="Tulis nama sesuai KTP" required autocomplete="off">
                     </div>
 
-                    <div id="sub_layanan_container" style="display: none;" class="mb-4">
-                        <label class="form-label fw-800 fs-4">Jenis Urusan</label>
-                        <select id="sub_layanan_select" class="form-select form-control-custom" onchange="toggleNikBySubLayanan()">
-                            <option value="kematian">Akte Kematian</option>
-                            <option value="perkawinan_perceraian">Perkawinan / Perceraian</option>
-                        </select>
-                    </div>
-
                     <div class="mb-5" id="nik_container">
-                        <label class="form-label fw-800 fs-4">Nomor NIK (16 Digit)</label>
-                        <input type="number" name="nik" id="input_nik" class="form-control form-control-custom" placeholder="332..." 
-                               oninput="javascript: if (this.value.length > 16) this.value = this.value.slice(0, 16);">
+                        <label class="form-label fw-800 fs-4">Nomor NIK (Wajib 16 Digit)</label>
+                        <input type="number" name="nik" id="input_nik" class="form-control form-control-custom" 
+                               placeholder="Masukkan 16 digit NIK Anda" required
+                               oninput="if (this.value.length > 16) this.value = this.value.slice(0, 16);">
+                        <small class="text-danger fw-bold mt-2 d-block">* Pastikan NIK yang dimasukkan benar.</small>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-800 shadow-lg" style="font-size: 1.8rem;">
@@ -281,49 +270,22 @@
 <script>
     let inputModalObj;
 
-    function pilihLayanan(id, nama, nikRequired) {
+    function pilihLayanan(id, nama) {
+        // Reset Form
+        document.getElementById('formAntrian').reset();
+        
+        // Set Data
         document.getElementById('selected_layanan_id').value = id;
         document.getElementById('titleLayanan').innerText = nama.toUpperCase();
         
-        const subContainer = document.getElementById('sub_layanan_container');
-        const nikContainer = document.getElementById('nik_container');
+        // Pastikan input NIK selalu required dan terlihat
         const inputNik = document.getElementById('input_nik');
-
-        document.getElementById('formAntrian').reset();
-        document.getElementById('selected_layanan_id').value = id;
-
-        // Logic khusus nama layanan tertentu
-        if (nama.toLowerCase().includes("pencatatan sipil khusus")) {
-            subContainer.style.display = 'block';
-            toggleNikBySubLayanan(); 
-        } else {
-            subContainer.style.display = 'none';
-            if (nikRequired) {
-                nikContainer.style.display = 'block';
-                inputNik.setAttribute('required', 'required');
-            } else {
-                nikContainer.style.display = 'none';
-                inputNik.removeAttribute('required');
-            }
-        }
+        inputNik.setAttribute('required', 'required');
         
         if (!inputModalObj) {
             inputModalObj = new bootstrap.Modal(document.getElementById('modalInputAntrian'));
         }
         inputModalObj.show();
-    }
-
-    function toggleNikBySubLayanan() {
-        const select = document.getElementById('sub_layanan_select');
-        const nikContainer = document.getElementById('nik_container');
-        const inputNik = document.getElementById('input_nik');
-        if (select.value === 'kematian') {
-            nikContainer.style.display = 'none';
-            inputNik.removeAttribute('required');
-        } else {
-            nikContainer.style.display = 'block';
-            inputNik.setAttribute('required', 'required');
-        }
     }
 
     @if(session('success_data'))

@@ -29,35 +29,19 @@ class UserDashboardController extends Controller
         $now = Carbon::now($timezone);
         $today = $now->toDateString();
 
-        // 2. Ambil data layanan untuk pengecekan syarat NIK
+        // 2. Ambil data layanan
         $layanan = Layanan::findOrFail($request->layanan_id);
         
-        /**
-         * LOGIKA SINKRONISASI NIK:
-         * Menentukan apakah NIK wajib diisi berdasarkan kolom 'is_nik_required' 
-         * dan pengecekan khusus kata 'kematian'
-         */
-        $isKematian = str_contains(strtolower($layanan->nama_layanan), 'kematian');
-        $nikWajib = $layanan->is_nik_required && !$isKematian;
-
-        // 3. Validasi Input Dinamis
-        $rules = [
+        // 3. Validasi Input Ketat
+        // NIK diwajibkan (required), harus angka (numeric), dan tepat 16 digit (digits:16)
+        $request->validate([
             'nama' => 'required|string|max:255',
             'layanan_id' => 'required|exists:layanans,id',
-        ];
-
-        if ($nikWajib) {
-            // Wajib NIK: Harus ada, harus angka, dan harus tepat 16 digit
-            $rules['nik'] = 'required|numeric|digits:16';
-        } else {
-            // Tidak Wajib NIK: Boleh kosong, tapi jika diisi harus angka 16 digit
-            $rules['nik'] = 'nullable|numeric|digits:16';
-        }
-
-        $request->validate($rules, [
-            'nik.required' => 'NIK wajib diisi untuk layanan ' . $layanan->nama_layanan . '.',
+            'nik' => 'required|numeric|digits:16',
+        ], [
+            'nik.required' => 'NIK wajib diisi untuk melakukan pendaftaran.',
             'nik.digits'   => 'NIK harus berjumlah tepat 16 digit angka.',
-            'nik.numeric'  => 'NIK harus berupa angka (0-9).',
+            'nik.numeric'  => 'NIK harus berupa angka.',
             'nama.required' => 'Nama lengkap wajib diisi.',
             'layanan_id.required' => 'Jenis layanan tidak valid.'
         ]);
@@ -79,7 +63,7 @@ class UserDashboardController extends Controller
         $queue = Queue::create([
             'nomor_antrian'  => $nomorAntrian,
             'nama_pendaftar' => $request->nama,
-            'nik'            => $request->filled('nik') ? $request->nik : null,
+            'nik'            => $request->nik,
             'layanan_id'     => $request->layanan_id,
             'loket_id'       => null, 
             'status'         => 'menunggu',
@@ -89,14 +73,13 @@ class UserDashboardController extends Controller
 
         /**
          * 6. REDIRECT KE WELCOME (HALAMAN UTAMA)
-         * Agar popup sukses muncul di halaman welcome dan saat tombol cetak/tutup diklik
-         * user tetap berada di alur menu utama.
+         * Membawa data sukses untuk ditampilkan di modal/popup tanda terima antrian
          */
         return redirect()->route('welcome')->with('success_data', [
             'id'      => $queue->id,
             'nomor'   => $nomorAntrian,
             'nama'    => $request->nama,
-            'nik'     => $queue->nik ?? '--- (Tanpa NIK)',
+            'nik'     => $queue->nik,
             'layanan' => $layanan->nama_layanan,
             'waktu'   => $now->format('H:i') . ' WIB',
             'tanggal' => $now->translatedFormat('d F Y')

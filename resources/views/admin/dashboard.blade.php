@@ -14,7 +14,7 @@
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-uppercase small fw-bold opacity-75">Total</h6>
+                            <h6 class="text-uppercase small fw-bold opacity-75">Total Antrian</h6>
                             <h2 class="fw-bold mb-0" id="total-antrian-count">{{ $totalAntrian ?? 0 }}</h2>
                         </div>
                         <i class="fas fa-users fa-2x opacity-25"></i>
@@ -74,7 +74,7 @@
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-uppercase small fw-bold opacity-75">Siap Diambil</h6>
+                            <h6 class="text-uppercase small fw-bold opacity-75">Pengambilan Dokumen</h6>
                             <h2 class="fw-bold mb-0" id="pengambilan-count">{{ $pengambilanDokumen ?? 0 }}</h2>
                         </div>
                         <i class="fas fa-file-export fa-2x opacity-25"></i>
