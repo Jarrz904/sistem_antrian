@@ -50,7 +50,8 @@ class AntrianController extends Controller
     }
 
     /**
-     * Panggil Antrian Berikutnya (Manual)
+     * Panggil Antrian Berikutnya (Tombol: PANGGIL ANTRIAN / NOMOR BERIKUTNYA)
+     * Logika: Menyelesaikan yang lama (jika ada) dan memanggil yang baru.
      */
     public function panggil(Request $request) {
         $user = auth()->user();
@@ -72,7 +73,7 @@ class AntrianController extends Controller
             return back()->with('info', 'Antrian sudah habis dikerjakan.');
         }
 
-        // 2. Otomatis selesaikan antrian yang sedang aktif sebelumnya
+        // 2. Otomatis selesaikan antrian yang sedang aktif sebelumnya oleh petugas ini
         Queue::where('user_id', $user->id)
             ->where('status', 'dipanggil')
             ->whereDate('created_at', $today)
@@ -95,7 +96,7 @@ class AntrianController extends Controller
     }
 
     /**
-     * Panggil Ulang (Recall)
+     * Panggil Ulang (Recall) dari daftar dilewati
      */
     public function panggilUlang($id) {
         $user = auth()->user();
@@ -104,12 +105,11 @@ class AntrianController extends Controller
         
         $q = Queue::where('id', $id)->firstOrFail();
 
-        // Matikan nomor lain yang mungkin masih 'dipanggil' agar tidak double di monitor
+        // Selesaikan/Lewati antrian yang sedang dipanggil saat ini agar tidak bentrok di layar
         Queue::where('user_id', $user->id)
             ->where('status', 'dipanggil')
             ->whereDate('created_at', $today)
-            ->where('id', '!=', $id)
-            ->update(['status' => 'lewat', 'updated_at' => $now]);
+            ->update(['status' => 'selesai', 'updated_at' => $now]);
 
         $q->update([
             'status'     => 'dipanggil',
@@ -126,51 +126,28 @@ class AntrianController extends Controller
     }
 
     /**
-     * Aksi Selesai atau Lewati (Otomatis panggil selanjutnya jika LEWAT)
+     * Aksi Selesai atau Lewati
+     * Sesuai Request: 
+     * - Selesai: Hanya mengubah status ke selesai.
+     * - Lewat: Mengubah status ke lewat.
      */
     public function aksi($id, $status) {
         $now = Carbon::now('Asia/Jakarta');
-        $today = $now->toDateString();
         $user = auth()->user();
 
         if (!in_array($status, ['selesai', 'lewat'])) {
             return back();
         }
 
-        // 1. Update status antrian yang dipilih
+        // Update status antrian yang dipilih
         Queue::where('id', $id)->update([
             'status'     => $status,
             'user_id'    => $user->id, 
             'updated_at' => $now 
         ]);
 
-        // 2. LOGIKA OTOMATIS: Jika 'lewat', langsung panggil nomor berikutnya
-        if ($status == 'lewat') {
-            $next = Queue::where('status', 'menunggu')
-                ->where('layanan_id', $user->layanan_id)
-                ->whereDate('created_at', $today)
-                ->orderBy('created_at', 'asc')
-                ->first();
-
-            if ($next) {
-                $next->update([
-                    'status'     => 'dipanggil',
-                    'loket_id'   => $user->loket_id,
-                    'user_id'    => $user->id,
-                    'panggil_at' => $now,
-                    'updated_at' => $now
-                ]);
-
-                return back()->with([
-                    'success'       => 'Antrian dilewati. Memanggil nomor ' . $next->nomor_antrian,
-                    'panggil_suara' => $next->nomor_antrian,
-                    'nomor_loket'   => $user->loket->nama_loket ?? 'Loket'
-                ]);
-            }
-            
-            return back()->with('success', 'Antrian dilewati. Tidak ada antrian selanjutnya.');
-        }
-
-        return back()->with('success', 'Antrian berhasil diselesaikan.');
+        $msg = ($status == 'selesai') ? 'Antrian berhasil diselesaikan.' : 'Antrian telah dilewati.';
+        
+        return back()->with('success', $msg);
     }
 }
