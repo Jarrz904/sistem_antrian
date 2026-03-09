@@ -121,34 +121,53 @@
         /* Modal Styles */
         .modal-content { border-radius: 25px; border: none; }
         
-        /* PENGATURAN CETAK DIPERTEBAL, HITAM PEKAT, & FULL TANPA POTONG */
+        /* PENGATURAN CETAK DIPERTEBAL, HITAM PEKAT, FULL & NAIK KE ATAS */
         @media print {
-            @page { margin: 0; } /* Hilangkan margin bawaan browser */
-            body { margin: 0; background-color: #fff !important; }
-            body * { visibility: hidden; }
+            @page { 
+                margin: 0; /* Hilangkan margin kertas bawaan browser */
+            }
+            body { 
+                margin: 0; 
+                padding: 0;
+                background-color: #fff !important; 
+            }
+            body * { 
+                visibility: hidden; 
+            }
             #printArea, #printArea * { 
                 visibility: visible; 
-                color: #000000 !important; /* Paksa hitam pekat */
-                font-weight: 900 !important; /* Paksa penebalan maksimal */
+                color: #000000 !important; /* Hitam pekat */
+                font-weight: 900 !important; /* Paling tebal */
                 text-shadow: none !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
             #printArea { 
-                position: absolute; /* Ubah fixed jadi absolute agar tidak bug saat ditarik printer */
+                position: absolute; 
                 left: 0; 
                 top: 0; 
-                width: 100% !important;
-                max-width: 76mm !important; /* Batas aman kertas 80mm agar tidak terpotong */
-                box-sizing: border-box !important; /* Mencegah padding membuat layout melebar */
+                width: 100% !important; /* Full mengikuti lebar asli kertas thermal */
+                max-width: 100% !important;
+                box-sizing: border-box !important;
                 text-align: center; 
-                padding: 15px 5px !important; /* Padding cetak disesuaikan agar tidak mendorong ke samping */
+                /* Padding dinolkan agar teks mentok ke atas */
+                padding: 0 5px 10px 5px !important; 
+                margin: 0 !important;
                 border: none !important;
             }
+            /* Menghilangkan margin bawaan elemen agar tidak ada spasi kosong di atas */
+            #printArea p:first-child {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
             hr { 
-                border-top: 3px solid #000000 !important; /* Garis pembatas tebal & pekat */
+                border-top: 3px solid #000000 !important; 
                 opacity: 1 !important; 
-                margin: 10px 0 !important;
+                margin: 5px 0 !important; /* Jarak garis dirapatkan */
+            }
+            /* Penyesuaian font ukuran tanggal agar tidak turun baris */
+            .waktu-print {
+                font-size: 0.9rem !important;
             }
         }
 
@@ -223,8 +242,8 @@
                         <p class="fw-bold mb-0 text-dark">{{ session('success_data')['layanan'] }}</p>
                         <p class="mb-0 text-dark fw-bold">{{ session('success_data')['nama'] }}</p>
                         
-                        <p class="mt-2 mb-0 text-dark fw-bold" style="font-size: 0.95rem;">
-                            {{ date('d F Y') }} | {{ session('success_data')['waktu'] }} WIB
+                        <p class="mt-2 mb-0 text-dark fw-bold waktu-print">
+                            {{ date('d F Y') }} | {{ session('success_data')['waktu'] }}
                         </p>
                     </div>
 
