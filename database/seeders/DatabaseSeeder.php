@@ -72,7 +72,7 @@ class DatabaseSeeder extends Seeder
 
         // 4. Seed Petugas Contoh
         \App\Models\User::create([
-            'name' => 'Budi Petugas',
+            'name' => 'Petugas 1',
             'username' => 'petugas1',
             'password' => bcrypt('password'),
             'role' => 'petugas',
