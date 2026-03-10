@@ -78,13 +78,20 @@
             position: relative;
         }
 
-        /* Style untuk status Selesai agar tidak mengalihkan perhatian dari yang sedang dipanggil */
+        /* PERBAIKAN: Status Selesai tetap berwarna biru cerah */
         .status-selesai {
-            opacity: 0.85;
-            border-color: #cbd5e1;
+            opacity: 1; /* Menghilangkan efek pudar */
+            border-color: var(--card-border);
         }
-        .status-selesai .nomor-antrian { color: #64748b !important; }
-        .status-selesai .loket-header { background: #475569; }
+        
+        /* Menghapus pewarnaan abu-abu pada nomor antrian agar tetap biru */
+        .status-selesai .nomor-antrian { 
+            color: var(--accent-blue) !important; 
+        }
+
+        .status-selesai .loket-header { 
+            background: var(--header-dark); /* Tetap konsisten dengan header loket lain */
+        }
 
         .calling-now {
             animation: pulse-border 2s infinite;
@@ -224,7 +231,6 @@
         function enableAudio() {
             audioEnabled = true;
             $('#audio-lock').fadeOut();
-            // Pancing suara kosong agar browser unlock
             const silent = new SpeechSynthesisUtterance('');
             window.speechSynthesis.speak(silent);
         }
@@ -254,7 +260,6 @@
             isSpeaking = true;
             const item = speechQueue.shift();
             
-            // Highlight visual saat sedang dipanggil
             renderUI(lastRawData, item.loket);
 
             bell.play().then(() => {
@@ -271,7 +276,7 @@
                     utter.onend = function() {
                         isSpeaking = false;
                         renderUI(lastRawData, null); 
-                        setTimeout(processQueue, 1500); // Jeda antar panggilan
+                        setTimeout(processQueue, 1500);
                     };
                     window.speechSynthesis.speak(utter);
                 }, 1000);
@@ -289,7 +294,6 @@
                     const nomorSekarang = item.nomor_antrian;
                     const tokenSekarang = item.updated_token;
 
-                    // Panggil hanya jika status 'dipanggil' dan token berubah (panggilan baru)
                     if (item.status === 'dipanggil' && !nomorSekarang.endsWith('000')) {
                         if (lastTokenMap[loketKey] !== tokenSekarang) {
                             if (audioEnabled) {
@@ -298,12 +302,10 @@
                             }
                         }
                     }
-                    // Simpan token terakhir per loket
                     lastTokenMap[loketKey] = tokenSekarang;
                 });
 
                 lastRawData = data;
-                // Selama tidak ada suara, update tampilan UI secara real-time
                 if (!isSpeaking) renderUI(data, null);
                 if (hasNewCall && !isSpeaking) processQueue();
             })
@@ -320,7 +322,6 @@
                 const count = data.length;
                 let basis, headerSize, numberSize, tagSize;
 
-                // Pengaturan Responsif berdasarkan jumlah Loket
                 if (count <= 3) {
                     basis = '30%'; headerSize = '1.8rem'; numberSize = '8rem'; tagSize = '1.4rem';
                 } else if (count <= 6) {
@@ -333,7 +334,6 @@
                     const isActive = (q.loket.nama_loket === activeLoketName);
                     const activeClass = isActive ? 'calling-now' : '';
                     
-                    // Deteksi jika nomor antrian sudah selesai di unit tersebut
                     const isFinished = q.layanan.nama_layanan.includes('(Selesai)') || 
                                      q.layanan.nama_layanan.includes('(Menuju Pengambilan)');
                     const finishedClass = isFinished ? 'status-selesai' : '';
@@ -354,7 +354,6 @@
         }
 
         $(document).ready(function() {
-            // Inisialisasi awal agar monitor langsung terisi data saat dibuka
             $.get('/api/display-data', function(data) {
                 if(data && data.length > 0) {
                     data.forEach(item => { 
@@ -365,10 +364,8 @@
                 }
             });
 
-            // Cek data setiap 2 detik
             setInterval(updateDisplay, 2000);
 
-            // Jam Digital
             setInterval(() => {
                 const now = new Date();
                 $('#clock-time').text(
