@@ -47,20 +47,29 @@ class AntrianController extends Controller
         // 3. DAFTAR SELESAI / DIPROSES (Riwayat Pelayanan)
         $selesai = Queue::whereDate('created_at', $today)
             ->when($isPengambilanPetugas, function($q) use ($user) {
-                // Loket Pengambilan: Hanya yang statusnya sudah 'selesai' di loketnya
+                // Riwayat pengambilan di loket ini
                 return $q->where('status', 'selesai')->where('loket_id', $user->loket_id);
             }, function($q) use ($user) {
-                // Loket Unit: Menampilkan yang sudah 'selesai' ATAU 'diproses' (lempar ke pengambilan)
-                return $q->whereIn('status', ['selesai', 'diproses'])
-                         ->where('layanan_id', $user->layanan_id);
+                // Menampilkan riwayat yang dikerjakan oleh petugas ini (user_id tetap terkunci)
+                return $q->whereIn('status', ['selesai', 'diproses', 'pengambilan_dokumen'])
+                         ->where('user_id', $user->id);
             })
             ->orderBy('updated_at', 'desc')
             ->get();
             
         // 4. ANTRIAN AKTIF SAAT INI
-        $current = Queue::where('user_id', $user->id)
-            ->whereIn('status', ['dipanggil', 'pengambilan_dokumen'])
-            ->whereDate('created_at', $today)
+        $current = Queue::whereDate('created_at', $today)
+            ->where(function($query) use ($user, $isPengambilanPetugas) {
+                if ($isPengambilanPetugas) {
+                    // Jika petugas pengambilan, cari berdasarkan loket_id aktif
+                    $query->where('loket_id', $user->loket_id)
+                          ->where('status', 'pengambilan_dokumen');
+                } else {
+                    // Jika petugas unit, cari berdasarkan user_id (kepemilikan antrian)
+                    $query->where('user_id', $user->id)
+                          ->where('status', 'dipanggil');
+                }
+            })
             ->with(['layanan', 'loket'])
             ->first();
 
@@ -114,15 +123,22 @@ class AntrianController extends Controller
 
         $isPengambilanPetugas = is_null($user->layanan_id);
 
-        // 1. OTOMATISASI: Selesaikan antrian lama yang masih menggantung
-        $oldQueue = Queue::where('user_id', $user->id)
-            ->whereIn('status', ['dipanggil', 'pengambilan_dokumen'])
-            ->whereDate('created_at', $today)
-            ->first();
+        // 1. OTOMATISASI: Selesaikan antrian lama yang sedang ditangani user/loket ini
+        $oldQueue = Queue::whereDate('created_at', $today)
+            ->where(function($q) use ($user, $isPengambilanPetugas) {
+                if ($isPengambilanPetugas) {
+                    $q->where('loket_id', $user->loket_id)->where('status', 'pengambilan_dokumen');
+                } else {
+                    $q->where('user_id', $user->id)->where('status', 'dipanggil');
+                }
+            })->first();
 
         if ($oldQueue) {
             $statusAuto = $this->determineFinalStatus($oldQueue, $isPengambilanPetugas);
-            $oldQueue->update(['status' => $statusAuto, 'updated_at' => $now]);
+            $oldQueue->update([
+                'status' => $statusAuto, 
+                'updated_at' => $now
+            ]);
         }
 
         // 2. Cari antrian berikutnya
@@ -141,14 +157,21 @@ class AntrianController extends Controller
 
         // 3. Update antrian baru
         $newStatus = $isPengambilanPetugas ? 'pengambilan_dokumen' : 'dipanggil';
-
-        $qNext->update([
+        
+        $updateData = [
             'status'     => $newStatus, 
-            'loket_id'   => $user->loket_id,
-            'user_id'    => $user->id,
+            'loket_id'   => $user->loket_id, 
             'panggil_at' => $now,
             'updated_at' => $now 
-        ]);
+        ];
+
+        // PENTING: Jika petugas pengambilan, JANGAN timpa user_id agar nomor tetap di loket asal.
+        // Jika petugas unit (loket 1-7), baru set user_id untuk mengunci kepemilikan.
+        if (!$isPengambilanPetugas) {
+            $updateData['user_id'] = $user->id;
+        }
+
+        $qNext->update($updateData);
 
         return back()->with([
             'success'       => 'Memanggil nomor ' . $qNext->nomor_antrian,
@@ -168,32 +191,27 @@ class AntrianController extends Controller
         $q = Queue::with('layanan')->findOrFail($id);
         
         $finalStatus = $status;
-
         if ($status == 'selesai') {
             $finalStatus = $this->determineFinalStatus($q, $isPengambilanPetugas);
-            
-            if ($finalStatus == 'selesai') {
-                $msg = 'Antrian ' . $q->nomor_antrian . ' telah selesai (Arsip).';
-            } else {
-                $msg = 'Pelayanan ' . $q->nomor_antrian . ' selesai, lanjut ke pengambilan dokumen.';
-            }
-        } elseif ($status == 'lewat') {
-            $msg = 'Antrian ' . $q->nomor_antrian . ' berhasil dilewati.';
-        } else {
-            $msg = 'Status antrian diperbarui.';
         }
 
-        $q->update([
+        $updateData = [
             'status'     => $finalStatus,
-            'user_id'    => $user->id, 
             'updated_at' => $now 
-        ]);
+        ];
+
+        // Jika dilewati (lewat), perbarui user_id agar tercatat siapa yang memanggil terakhir
+        if ($status == 'lewat') {
+            $updateData['user_id'] = $user->id;
+        }
+
+        $q->update($updateData);
         
-        return back()->with('success', $msg);
+        return back()->with('success', 'Status antrian ' . $q->nomor_antrian . ' diperbarui.');
     }
 
     /**
-     * Panggil Ulang (Recall) dari tabel Dilewati
+     * Panggil Ulang (Recall)
      */
     public function panggilUlang($id) {
         $user = auth()->user();
@@ -203,11 +221,18 @@ class AntrianController extends Controller
         $isPengambilanPetugas = is_null($user->layanan_id);
         $status = $isPengambilanPetugas ? 'pengambilan_dokumen' : 'dipanggil';
 
-        $q->update([
+        $updateData = [
             'status'     => $status,
-            'user_id'    => $user->id,
+            'loket_id'   => $user->loket_id,
             'updated_at' => $now 
-        ]);
+        ];
+
+        // Sama seperti fungsi panggil: Petugas pengambilan jangan mencuri kepemilikan user_id
+        if (!$isPengambilanPetugas) {
+            $updateData['user_id'] = $user->id;
+        }
+
+        $q->update($updateData);
 
         return back()->with([
             'panggil_suara' => $q->nomor_antrian,

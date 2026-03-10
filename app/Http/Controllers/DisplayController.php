@@ -6,22 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Queue;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Http\Request;
 
 class DisplayController extends Controller
 {
-    /**
-     * Menampilkan halaman display antrian publik.
-     */
     public function index() {
         return view('public.display');
     }
 
-    /**
-     * Mengambil data antrian untuk monitor display.
-     * Logic: Mencari aktivitas terakhir berdasarkan loket petugas yang sedang aktif.
-     */
     public function getDisplayData() {
-        // Ambil semua petugas yang memiliki loket_id (petugas yang bertugas)
+        // 1. Ambil semua petugas yang sedang login/aktif di loket
         $petugasAktif = User::whereNotNull('loket_id')
             ->with(['loket', 'layanan'])
             ->get()
@@ -31,57 +25,76 @@ class DisplayController extends Controller
         $today = Carbon::today('Asia/Jakarta');
 
         foreach ($petugasAktif as $petugas) {
-            /**
-             * MENGAMBIL PREFIX:
-             * Jika petugas unit, ambil prefix layanannya. Jika pengambilan, default 'A'.
-             */
             $prefixLayanan = $petugas->layanan->prefix ?? 'A';
-
-            /**
-             * QUERY ANTRIAN TERAKHIR (LATEST ACTIVITY):
-             * Mencari antrian yang baru saja berinteraksi dengan loket ini hari ini.
-             * Kita memantau status: 
-             * - dipanggil (Layanan Unit)
-             * - pengambilan_dokumen (Layanan Pengambilan)
-             * - selesai / lewat (Agar nomor tetap tampil di monitor meski sudah selesai dipanggil)
-             */
-            $lastQueue = Queue::with('layanan')
-                ->where('loket_id', $petugas->loket_id)
-                ->whereDate('created_at', $today)
-                ->whereIn('status', ['dipanggil', 'pengambilan_dokumen', 'selesai', 'lewat', 'diproses'])
-                ->orderByRaw("FIELD(status, 'dipanggil', 'pengambilan_dokumen', 'diproses', 'selesai', 'lewat') ASC") 
-                ->orderBy('updated_at', 'desc')
-                ->first();
-
-            /**
-             * PENENTUAN NOMOR TAMPIL:
-             * Tampilkan nomor terakhir. Jika belum ada aktivitas, tampilkan [Prefix]000.
-             */
-            $nomorTampil = $lastQueue ? $lastQueue->nomor_antrian : $prefixLayanan . '000';
             
-            /**
-             * PENENTUAN LABEL LAYANAN:
-             * Jika sedang aktif memanggil, ambil nama layanan dari antrian tersebut.
-             */
-            $labelLayanan = 'SIAP MELAYANI';
-            if ($lastQueue) {
-                $labelLayanan = $lastQueue->layanan->nama_layanan ?? 'Pelayanan';
-                
-                // Jika statusnya diproses (baru saja dilempar oleh unit), beri keterangan
-                if ($lastQueue->status == 'diproses') {
-                    $labelLayanan = 'Menuju Loket Pengambilan';
-                }
-            } elseif ($petugas->layanan) {
-                $labelLayanan = $petugas->layanan->nama_layanan;
+            // Base query untuk antrian hari ini
+            $query = Queue::with('layanan')
+                ->whereDate('created_at', $today);
+
+            if ($petugas->layanan_id) {
+                /**
+                 * --- LOKET UNIT LAYANAN (Loket 1-7) ---
+                 * Logika: Cari nomor terakhir yang ditangani oleh petugas ini.
+                 * Kita kunci menggunakan 'user_id' agar meskipun loket_id di tabel antrian 
+                 * sudah berubah ke loket pengambilan, Unit Layanan tetap menampilkan nomor ini.
+                 */
+                $lastQueue = $query->where(function($q) use ($petugas) {
+                        // Kondisi A: Antrian yang saat ini ada di loketnya
+                        $q->where('loket_id', $petugas->loket_id)
+                          // Kondisi B: Antrian yang dulu dia panggil tapi sekarang sudah di tahap pengambilan
+                          ->orWhere('user_id', $petugas->id);
+                    })
+                    ->whereIn('status', ['dipanggil', 'diproses', 'pengambilan_dokumen', 'selesai', 'lewat'])
+                    // Urutan prioritas: yang sedang dipanggil tampil paling atas/utama
+                    ->orderByRaw("FIELD(status, 'dipanggil', 'diproses', 'pengambilan_dokumen', 'selesai', 'lewat') ASC")
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
+
             } else {
-                $labelLayanan = "Loket Pengambilan";
+                /**
+                 * --- LOKET PENGAMBILAN DOKUMEN ---
+                 * Logika: Hanya menampilkan antrian yang memang sedang berada di tahap pengambilan.
+                 */
+                $lastQueue = (clone $query)
+                    ->where('loket_id', $petugas->loket_id)
+                    ->whereIn('status', ['pengambilan_dokumen', 'selesai', 'lewat'])
+                    ->orderByRaw("FIELD(status, 'pengambilan_dokumen', 'selesai', 'lewat') ASC")
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
             }
 
-            /**
-             * TRIGGER SUARA (Voice Call):
-             * Voice call hanya dipicu jika statusnya adalah 'dipanggil' atau 'pengambilan_dokumen'.
-             */
-            $isCalling = $lastQueue && in_array($lastQueue->status, ['dipanggil', 'pengambilan_dokumen']);
+            // --- Penentuan Text Nomor Antrian ---
+            $nomorTampil = $lastQueue ? $lastQueue->nomor_antrian : $prefixLayanan . '000';
+            
+            // --- Penentuan Label Status Layanan (Visual) ---
+            $labelLayanan = $petugas->layanan->nama_layanan ?? 'Loket Pengambilan';
+            
+            if ($lastQueue) {
+                if ($petugas->layanan_id) {
+                    // Jika di unit layanan tapi status sudah di tahap pengambilan atau selesai
+                    if ($lastQueue->status == 'pengambilan_dokumen') {
+                        $labelLayanan = $lastQueue->layanan->nama_layanan . ' (Menuju Pengambilan)';
+                    } elseif (in_array($lastQueue->status, ['diproses', 'selesai'])) {
+                        $labelLayanan = $lastQueue->layanan->nama_layanan . ' (Selesai)';
+                    }
+                } else {
+                    // Jika di loket pengambilan
+                    $labelLayanan = 'AMBIL: ' . ($lastQueue->layanan->nama_layanan ?? 'DOKUMEN');
+                }
+            }
+
+            // --- Trigger Suara Panggilan (Voice) ---
+            $statusUntukSuara = 'standby';
+            if ($lastQueue) {
+                // Unit Layanan bersuara jika status 'dipanggil'
+                if ($petugas->layanan_id && $lastQueue->status == 'dipanggil') {
+                    $statusUntukSuara = 'dipanggil';
+                } 
+                // Loket Pengambilan bersuara jika status 'pengambilan_dokumen'
+                elseif (!$petugas->layanan_id && $lastQueue->status == 'pengambilan_dokumen') {
+                    $statusUntukSuara = 'dipanggil';
+                }
+            }
 
             $displayData[] = [
                 'id_antrian'    => $lastQueue->id ?? null,
@@ -93,13 +106,8 @@ class DisplayController extends Controller
                 'layanan' => [
                     'nama_layanan' => $labelLayanan
                 ],
-                'status'        => $isCalling ? 'dipanggil' : 'standby',
-                
-                /**
-                 * UPDATED TOKEN:
-                 * Sangat penting untuk fitur Recall. Setiap kali update_at berubah (karena panggil ulang),
-                 * token ini berubah, memicu JavaScript monitor untuk membunyikan suara lagi.
-                 */
+                'status'        => $statusUntukSuara,
+                // Gunakan format microsecond agar JS Monitor mendeteksi perubahan sekecil apapun
                 'updated_token' => $lastQueue ? $lastQueue->updated_at->format('Y-m-d H:i:s.u') : null,
             ];
         }

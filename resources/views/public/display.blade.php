@@ -11,11 +11,12 @@
 
     <style>
         :root {
-            --bg-light: #ffffff;
+            --bg-light: #f8fafc;
             --text-main: #0f172a;
             --accent-blue: #0d6efd;
             --card-border: #e2e8f0;
             --header-dark: #1e293b;
+            --success-green: #10b981;
         }
 
         body, html {
@@ -30,27 +31,28 @@
         }
 
         .header-monitor {
-            background: #f8fafc;
-            padding: 1vh 4vw;
-            border-bottom: 2px solid #e2e8f0;
+            background: #ffffff;
+            padding: 1.5vh 4vw;
+            border-bottom: 3px solid var(--accent-blue);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        .title-app { font-weight: 800; font-size: clamp(1rem, 2vw, 1.8rem); margin: 0; }
-        #clock-time { font-weight: 800; font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1; }
-        #clock-date { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+        .title-app { font-weight: 800; font-size: clamp(1.2rem, 2vw, 1.8rem); margin: 0; color: var(--header-dark); }
+        #clock-time { font-weight: 800; font-size: clamp(1.8rem, 3.5vw, 2.5rem); line-height: 1; color: var(--accent-blue); }
+        #clock-date { font-size: 0.9rem; color: #64748b; font-weight: 700; text-transform: uppercase; }
 
         .main-content {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1.5vh;
-            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-            background-size: 30px 30px;
+            padding: 2vh;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 40px 40px;
             overflow: hidden;
         }
 
@@ -59,47 +61,54 @@
             flex-wrap: wrap;
             justify-content: center;
             align-content: center;
-            gap: 12px;
+            gap: 20px;
             width: 100%;
             height: 100%;
-            max-width: 100%;
-            margin: 0 auto;
         }
 
         .card-loket {
             background: #ffffff;
-            border-radius: 1.5rem;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            border-radius: 2rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
             border: 2px solid var(--card-border);
-            transition: all 0.4s ease;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
-            min-width: 150px;
+            position: relative;
         }
 
+        /* Style untuk status Selesai agar tidak mengalihkan perhatian dari yang sedang dipanggil */
+        .status-selesai {
+            opacity: 0.85;
+            border-color: #cbd5e1;
+        }
+        .status-selesai .nomor-antrian { color: #64748b !important; }
+        .status-selesai .loket-header { background: #475569; }
+
         .calling-now {
-            animation: pulse-border 1.5s infinite;
+            animation: pulse-border 2s infinite;
             border-color: var(--accent-blue) !important;
-            transform: scale(1.03);
-            z-index: 10;
-            background-color: #f0f7ff;
+            transform: scale(1.05);
+            z-index: 100;
+            background-color: #fff;
         }
 
         @keyframes pulse-border {
-            0% { box-shadow: 0 0 0 0px rgba(13, 110, 253, 0.6); }
-            70% { box-shadow: 0 0 0 20px rgba(13, 110, 253, 0); }
+            0% { box-shadow: 0 0 0 0px rgba(13, 110, 253, 0.7); }
+            70% { box-shadow: 0 0 0 30px rgba(13, 110, 253, 0); }
             100% { box-shadow: 0 0 0 0px rgba(13, 110, 253, 0); }
         }
 
         .loket-header {
             background: var(--header-dark);
             color: #ffffff;
-            padding: 0.8vh;
-            font-size: 1rem;
+            padding: 1.2vh;
+            font-size: 1.2rem;
             font-weight: 800;
             text-align: center;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .card-body {
@@ -107,7 +116,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 1.5vh 1vh !important;
+            padding: 2vh !important;
             flex: 1;
         }
 
@@ -115,19 +124,20 @@
             font-weight: 900;
             color: var(--accent-blue);
             margin: 0;
-            line-height: 1;
-            letter-spacing: -1px;
+            line-height: 0.9;
+            letter-spacing: -2px;
+            transition: color 0.3s ease;
         }
 
         .layanan-tag {
             background: #f1f5f9;
-            color: #475569;
-            padding: 0.5vh 1vw;
-            border-radius: 8px;
+            color: #334155;
+            padding: 0.8vh 1.5vw;
+            border-radius: 12px;
             font-weight: 700;
-            margin-top: 1vh;
-            border: 1px solid #cbd5e1;
-            width: 90%;
+            margin-top: 1.5vh;
+            border: 1px solid #e2e8f0;
+            width: 95%;
             text-align: center;
             white-space: nowrap;
             overflow: hidden;
@@ -135,19 +145,20 @@
         }
 
         .footer-bar {
-            background: var(--accent-blue);
-            height: 5vh;
+            background: var(--header-dark);
+            height: 6vh;
             display: flex;
             align-items: center;
-            font-size: 1.1rem;
-            font-weight: 700;
+            font-size: 1.2rem;
+            font-weight: 600;
             color: white;
             flex-shrink: 0;
+            border-top: 4px solid var(--accent-blue);
         }
 
         #audio-lock {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.98);
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
             color: white; z-index: 9999;
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
@@ -158,33 +169,39 @@
 <body>
 
     <div id="audio-lock" onclick="enableAudio()">
-        <i class="fas fa-volume-up fa-5x mb-4 text-primary"></i>
-        <h1 class="fw-bold display-4">KLIK UNTUK MENGAKTIFKAN</h1>
-        <p class="fs-4">Monitor memerlukan izin audio untuk memutar suara antrian</p>
-        <button class="btn btn-primary btn-lg mt-4 px-5 rounded-pill fw-bold shadow">AKTIFKAN SEKARANG</button>
+        <div class="p-5 rounded-4 bg-white bg-opacity-10 backdrop-blur text-center">
+            <i class="fas fa-volume-up fa-5x mb-4 text-primary animate-bounce"></i>
+            <h1 class="fw-bold display-4 mb-3">SISTEM ANTRIAN AKTIF</h1>
+            <p class="fs-4 mb-4">Klik di mana saja untuk mengaktifkan suara panggilan</p>
+            <button class="btn btn-primary btn-lg px-5 py-3 rounded-pill fw-bold shadow-lg">BUKA MONITOR</button>
+        </div>
     </div>
 
     <header class="header-monitor">
-        <h1 class="title-app"><i class="fas fa-university me-2 text-primary"></i>SISTEM ANTRIAN DUKCAPIL</h1>
+        <h1 class="title-app">
+            <i class="fas fa-circle-nodes me-2 text-primary"></i>
+            MONITOR ANTRIAN TERPADU
+        </h1>
         <div class="text-end">
             <div id="clock-time">00:00:00</div>
-            <div id="clock-date">Memuat...</div>
+            <div id="clock-date">Memuat Tanggal...</div>
         </div>
     </header>
 
     <main class="main-content">
-        <div id="antrian-container" class="row-antrian"></div>
+        <div id="antrian-container" class="row-antrian">
+            </div>
     </main>
 
     <footer class="footer-bar">
-        <marquee scrollamount="10">
-            &bull; Selamat Datang di Kantor Layanan Dukcapil &bull; Layanan Cepat, Akurat, dan Transparan &bull; Silakan Menunggu Nomor Anda Dipanggil &bull;
+        <marquee scrollamount="8">
+            &bull; Selamat Datang di Layanan Publik &bull; Budayakan Mengantri demi Kenyamanan Bersama &bull; Pastikan Dokumen Anda Lengkap Sebelum Menuju Loket Pengambilan &bull; Layanan Kami Gratis Tidak Dipungut Biaya Tambahan &bull;
         </marquee>
     </footer>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        let lastTokenMap = {};
+        let lastTokenMap = {}; 
         let lastRawData = [];
         let speechQueue = [];
         let isSpeaking = false;
@@ -195,7 +212,7 @@
 
         function loadVoices() {
             const voices = window.speechSynthesis.getVoices();
-            indonesianVoice = voices.find(v => v.lang === 'id-ID' && (v.name.includes('Female') || v.name.includes('Google'))) || 
+            indonesianVoice = voices.find(v => v.lang === 'id-ID' && v.name.includes('Google')) || 
                              voices.find(v => v.lang === 'id-ID');
         }
 
@@ -207,6 +224,7 @@
         function enableAudio() {
             audioEnabled = true;
             $('#audio-lock').fadeOut();
+            // Pancing suara kosong agar browser unlock
             const silent = new SpeechSynthesisUtterance('');
             window.speechSynthesis.speak(silent);
         }
@@ -236,7 +254,7 @@
             isSpeaking = true;
             const item = speechQueue.shift();
             
-            // Highlight loket yang aktif saat bersuara
+            // Highlight visual saat sedang dipanggil
             renderUI(lastRawData, item.loket);
 
             bell.play().then(() => {
@@ -245,18 +263,18 @@
                     const teks = `Nomor antrian, ${nomorEja}, silakan menuju ke, ${item.loket}`;
                     const utter = new SpeechSynthesisUtterance(teks);
                     utter.lang = 'id-ID';
-                    utter.rate = 0.9; 
-                    utter.pitch = 1.1; 
+                    utter.rate = 0.85; 
+                    utter.pitch = 1.0; 
                     
                     if (indonesianVoice) utter.voice = indonesianVoice;
 
                     utter.onend = function() {
                         isSpeaking = false;
                         renderUI(lastRawData, null); 
-                        setTimeout(processQueue, 1000);
+                        setTimeout(processQueue, 1500); // Jeda antar panggilan
                     };
                     window.speechSynthesis.speak(utter);
-                }, 1200);
+                }, 1000);
             }).catch(() => { isSpeaking = false; });
         }
 
@@ -271,7 +289,7 @@
                     const nomorSekarang = item.nomor_antrian;
                     const tokenSekarang = item.updated_token;
 
-                    // SYARAT PANGGIL: Status dipanggil DAN token berubah DAN bukan nomor default 000
+                    // Panggil hanya jika status 'dipanggil' dan token berubah (panggilan baru)
                     if (item.status === 'dipanggil' && !nomorSekarang.endsWith('000')) {
                         if (lastTokenMap[loketKey] !== tokenSekarang) {
                             if (audioEnabled) {
@@ -280,41 +298,54 @@
                             }
                         }
                     }
+                    // Simpan token terakhir per loket
                     lastTokenMap[loketKey] = tokenSekarang;
                 });
 
                 lastRawData = data;
+                // Selama tidak ada suara, update tampilan UI secara real-time
                 if (!isSpeaking) renderUI(data, null);
                 if (hasNewCall && !isSpeaking) processQueue();
+            })
+            .fail(function() {
+                console.log("Gagal mengambil data dari server.");
             });
         }
 
         function renderUI(data, activeLoketName) {
             let html = '';
             if(!data || data.length === 0) {
-                html = `<div class="text-center text-muted w-100 mt-5"><h2>BELUM ADA PETUGAS AKTIF</h2></div>`;
+                html = `<div class="text-center text-muted w-100 mt-5"><h2>MENUNGGU PETUGAS AKTIF...</h2></div>`;
             } else {
                 const count = data.length;
                 let basis, headerSize, numberSize, tagSize;
 
-                // Penyesuaian ukuran grid berdasarkan jumlah loket aktif
+                // Pengaturan Responsif berdasarkan jumlah Loket
                 if (count <= 3) {
-                    basis = '30%'; headerSize = '1.8rem'; numberSize = '7rem'; tagSize = '1.3rem';
+                    basis = '30%'; headerSize = '1.8rem'; numberSize = '8rem'; tagSize = '1.4rem';
                 } else if (count <= 6) {
-                    basis = '45%'; headerSize = '1.4rem'; numberSize = '5.5rem'; tagSize = '1.1rem';
+                    basis = '30%'; headerSize = '1.3rem'; numberSize = '6rem'; tagSize = '1.1rem';
                 } else {
-                    basis = '23%'; headerSize = '1.1rem'; numberSize = '4.5rem'; tagSize = '0.9rem';
+                    basis = '22%'; headerSize = '1.1rem'; numberSize = '4.5rem'; tagSize = '0.9rem';
                 }
 
                 data.forEach(q => {
                     const isActive = (q.loket.nama_loket === activeLoketName);
                     const activeClass = isActive ? 'calling-now' : '';
+                    
+                    // Deteksi jika nomor antrian sudah selesai di unit tersebut
+                    const isFinished = q.layanan.nama_layanan.includes('(Selesai)') || 
+                                     q.layanan.nama_layanan.includes('(Menuju Pengambilan)');
+                    const finishedClass = isFinished ? 'status-selesai' : '';
+
                     html += `
-                    <div class="card-loket ${activeClass}" style="flex: 1 1 ${basis}; max-width: ${basis === '30%' ? '450px' : '350px'};">
+                    <div class="card-loket ${activeClass} ${finishedClass}" style="flex: 1 1 ${basis}; max-width: 450px;">
                         <div class="loket-header" style="font-size: ${headerSize}">${q.loket.nama_loket}</div>
                         <div class="card-body">
                             <div class="nomor-antrian" style="font-size: ${numberSize}">${q.nomor_antrian}</div>
-                            <div class="layanan-tag" style="font-size: ${tagSize}">${q.layanan.nama_layanan}</div>
+                            <div class="layanan-tag" style="font-size: ${tagSize}">
+                                <i class="fas fa-tag me-1 small"></i> ${q.layanan.nama_layanan}
+                            </div>
                         </div>
                     </div>`;
                 });
@@ -323,7 +354,7 @@
         }
 
         $(document).ready(function() {
-            // Inisialisasi awal tanpa suara
+            // Inisialisasi awal agar monitor langsung terisi data saat dibuka
             $.get('/api/display-data', function(data) {
                 if(data && data.length > 0) {
                     data.forEach(item => { 
@@ -334,14 +365,20 @@
                 }
             });
 
-            setInterval(updateDisplay, 3000);
+            // Cek data setiap 2 detik
+            setInterval(updateDisplay, 2000);
 
+            // Jam Digital
             setInterval(() => {
                 const now = new Date();
-                $('#clock-time').text(now.getHours().toString().padStart(2, '0') + ':' + 
-                                     now.getMinutes().toString().padStart(2, '0') + ':' + 
-                                     now.getSeconds().toString().padStart(2, '0'));
-                $('#clock-date').text(now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' }));
+                $('#clock-time').text(
+                    now.getHours().toString().padStart(2, '0') + ':' + 
+                    now.getMinutes().toString().padStart(2, '0') + ':' + 
+                    now.getSeconds().toString().padStart(2, '0')
+                );
+                $('#clock-date').text(now.toLocaleDateString('id-ID', { 
+                    weekday:'long', day:'numeric', month:'long', year:'numeric' 
+                }));
             }, 1000);
         });
     </script>
