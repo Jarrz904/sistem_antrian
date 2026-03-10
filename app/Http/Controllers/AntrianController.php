@@ -18,49 +18,90 @@ class AntrianController extends Controller
         $today = Carbon::now('Asia/Jakarta')->toDateString();
         
         // Cek apakah user adalah petugas loket pengambilan (tidak terikat layanan_id tertentu)
-        $isPengambilan = is_null($user->layanan_id);
+        $isPengambilanPetugas = is_null($user->layanan_id);
 
-        // DAFTAR TUNGGU
+        // 1. DAFTAR TUNGGU
         $antrian = Queue::whereDate('created_at', $today)
-            ->when($isPengambilan, function($q) {
-                // Loket Pengambilan menunggu antrian yang berstatus 'pengambilan'
-                return $q->where('status', 'pengambilan');
+            ->when($isPengambilanPetugas, function($q) {
+                // Loket Pengambilan menunggu antrian yang berstatus 'diproses'
+                return $q->where('status', 'diproses');
             }, function($q) use ($user) {
-                // Loket Unit menunggu antrian sesuai layanan masing-masing
+                // Loket Unit menunggu antrian sesuai layanan masing-masing ('menunggu')
                 return $q->where('status', 'menunggu')->where('layanan_id', $user->layanan_id);
             })
             ->orderBy('updated_at', 'asc')
             ->with('layanan')
             ->get();
 
-        // DAFTAR DILEWATI
+        // 2. DAFTAR DILEWATI
         $skipped = Queue::where('status', 'lewat')
             ->whereDate('created_at', $today)
-            ->when($isPengambilan, function($q) use ($user) {
+            ->when($isPengambilanPetugas, function($q) use ($user) {
                 return $q->where('loket_id', $user->loket_id);
             }, function($q) use ($user) {
                 return $q->where('layanan_id', $user->layanan_id);
             })
             ->orderBy('updated_at', 'desc')
             ->get();
+
+        // 3. DAFTAR SELESAI / DIPROSES (Riwayat Pelayanan)
+        $selesai = Queue::whereDate('created_at', $today)
+            ->when($isPengambilanPetugas, function($q) use ($user) {
+                // Loket Pengambilan: Hanya yang statusnya sudah 'selesai' di loketnya
+                return $q->where('status', 'selesai')->where('loket_id', $user->loket_id);
+            }, function($q) use ($user) {
+                // Loket Unit: Menampilkan yang sudah 'selesai' ATAU 'diproses' (lempar ke pengambilan)
+                return $q->whereIn('status', ['selesai', 'diproses'])
+                         ->where('layanan_id', $user->layanan_id);
+            })
+            ->orderBy('updated_at', 'desc')
+            ->get();
             
-        // ANTRIAN AKTIF SAAT INI
+        // 4. ANTRIAN AKTIF SAAT INI
         $current = Queue::where('user_id', $user->id)
-            ->where('status', 'dipanggil')
+            ->whereIn('status', ['dipanggil', 'pengambilan_dokumen'])
             ->whereDate('created_at', $today)
             ->with(['layanan', 'loket'])
             ->first();
 
+        // Response untuk AJAX Realtime
         if ($request->ajax()) {
             return response()->json([
                 'antrian' => $antrian,
                 'skipped' => $skipped,
+                'selesai' => $selesai,
                 'count'   => $antrian->count(),
                 'current' => $current
             ]);
         }
 
-        return view('petugas.dashboard', compact('antrian', 'current', 'skipped'));
+        return view('petugas.dashboard', compact('antrian', 'current', 'skipped', 'selesai'));
+    }
+
+    /**
+     * Fungsi Internal untuk menentukan status akhir
+     */
+    private function determineFinalStatus($queue, $isPengambilanPetugas) {
+        if ($isPengambilanPetugas) {
+            return 'selesai';
+        }
+
+        $namaLayanan = strtoupper($queue->layanan->nama_layanan ?? '');
+
+        $langsungSelesai = [
+            'REKAM KTP',
+            'REKAM BIOMETRIK',
+            'KONSULTASI',
+            'PENGADUAN'
+        ];
+
+        foreach ($langsungSelesai as $item) {
+            if (str_contains($namaLayanan, $item)) {
+                return 'selesai';
+            }
+        }
+
+        return 'diproses';
     }
 
     /**
@@ -71,12 +112,23 @@ class AntrianController extends Controller
         $now = Carbon::now('Asia/Jakarta');
         $today = $now->toDateString();
 
-        $isPengambilan = is_null($user->layanan_id);
+        $isPengambilanPetugas = is_null($user->layanan_id);
 
-        // Cari antrian baru berdasarkan tipe petugas
+        // 1. OTOMATISASI: Selesaikan antrian lama yang masih menggantung
+        $oldQueue = Queue::where('user_id', $user->id)
+            ->whereIn('status', ['dipanggil', 'pengambilan_dokumen'])
+            ->whereDate('created_at', $today)
+            ->first();
+
+        if ($oldQueue) {
+            $statusAuto = $this->determineFinalStatus($oldQueue, $isPengambilanPetugas);
+            $oldQueue->update(['status' => $statusAuto, 'updated_at' => $now]);
+        }
+
+        // 2. Cari antrian berikutnya
         $qNext = Queue::whereDate('created_at', $today)
-            ->when($isPengambilan, function($query) {
-                return $query->where('status', 'pengambilan');
+            ->when($isPengambilanPetugas, function($query) {
+                return $query->where('status', 'diproses');
             }, function($query) use ($user) {
                 return $query->where('status', 'menunggu')->where('layanan_id', $user->layanan_id);
             })
@@ -87,26 +139,11 @@ class AntrianController extends Controller
             return back()->with('info', 'Antrian sudah habis dikerjakan.');
         }
 
-        // OTOMATISASI: Selesaikan antrian lama jika masih ada yang berstatus 'dipanggil'
-        $oldQueue = Queue::where('user_id', $user->id)
-            ->where('status', 'dipanggil')
-            ->whereDate('created_at', $today)
-            ->first();
+        // 3. Update antrian baru
+        $newStatus = $isPengambilanPetugas ? 'pengambilan_dokumen' : 'dipanggil';
 
-        if ($oldQueue) {
-            $finalStatus = 'selesai';
-            
-            // Jika BUKAN petugas pengambilan DAN BUKAN layanan Rekam KTP, lempar ke pengambilan
-            if (!$isPengambilan && $oldQueue->layanan?->nama_layanan !== 'Pelayanan Rekam KTP') {
-                $finalStatus = 'pengambilan';
-            }
-            
-            $oldQueue->update(['status' => $finalStatus, 'updated_at' => $now]);
-        }
-
-        // Update antrian baru ke status dipanggil
         $qNext->update([
-            'status'     => 'dipanggil', 
+            'status'     => $newStatus, 
             'loket_id'   => $user->loket_id,
             'user_id'    => $user->id,
             'panggil_at' => $now,
@@ -121,7 +158,7 @@ class AntrianController extends Controller
     }
 
     /**
-     * Tombol Aksi Manual (Selesai, Lewati)
+     * Tombol Aksi Manual (Selesai Pelayanan / Lewati)
      */
     public function aksi($id, $status) {
         $now = Carbon::now('Asia/Jakarta');
@@ -129,25 +166,25 @@ class AntrianController extends Controller
         $isPengambilanPetugas = is_null($user->layanan_id);
 
         $q = Queue::with('layanan')->findOrFail($id);
+        
+        $finalStatus = $status;
 
-        // Penanganan Logika Selesai/Pengambilan
-        if ($status == 'pengambilan' || $status == 'selesai') {
-            // Jika Petugas Loket Pengambilan ATAU Layanan Rekam KTP, paksa status jadi 'selesai'
-            if ($isPengambilanPetugas || $q->layanan?->nama_layanan == 'Pelayanan Rekam KTP') {
-                $status = 'selesai';
-                $msg = 'Antrian telah selesai dan diarsipkan.';
+        if ($status == 'selesai') {
+            $finalStatus = $this->determineFinalStatus($q, $isPengambilanPetugas);
+            
+            if ($finalStatus == 'selesai') {
+                $msg = 'Antrian ' . $q->nomor_antrian . ' telah selesai (Arsip).';
             } else {
-                // Selain itu (Layanan umum), lempar ke loket pengambilan
-                $status = 'pengambilan';
-                $msg = 'Antrian diteruskan ke Pengambilan Dokumen.';
+                $msg = 'Pelayanan ' . $q->nomor_antrian . ' selesai, lanjut ke pengambilan dokumen.';
             }
+        } elseif ($status == 'lewat') {
+            $msg = 'Antrian ' . $q->nomor_antrian . ' berhasil dilewati.';
         } else {
-            // Untuk status 'lewat'
-            $msg = 'Antrian dilewati.';
+            $msg = 'Status antrian diperbarui.';
         }
 
         $q->update([
-            'status'     => $status,
+            'status'     => $finalStatus,
             'user_id'    => $user->id, 
             'updated_at' => $now 
         ]);
@@ -156,15 +193,18 @@ class AntrianController extends Controller
     }
 
     /**
-     * Panggil Ulang (Recall)
+     * Panggil Ulang (Recall) dari tabel Dilewati
      */
     public function panggilUlang($id) {
         $user = auth()->user();
         $now = Carbon::now('Asia/Jakarta');
         $q = Queue::findOrFail($id);
 
+        $isPengambilanPetugas = is_null($user->layanan_id);
+        $status = $isPengambilanPetugas ? 'pengambilan_dokumen' : 'dipanggil';
+
         $q->update([
-            'status'     => 'dipanggil',
+            'status'     => $status,
             'user_id'    => $user->id,
             'updated_at' => $now 
         ]);

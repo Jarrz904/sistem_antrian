@@ -16,7 +16,6 @@ class UserDashboardController extends Controller
         $lokets = Loket::all();
         $layanans = Layanan::all();
         
-        // Pastikan path view sesuai dengan struktur folder Anda
         return view('public.dashboard_user', compact('lokets', 'layanans'));
     }
 
@@ -32,18 +31,16 @@ class UserDashboardController extends Controller
         // 2. Ambil data layanan
         $layanan = Layanan::findOrFail($request->layanan_id);
         
-        // 3. Validasi Input Ketat
-        // NIK diwajibkan (required), harus angka (numeric), dan tepat 16 digit (digits:16)
+        // 3. Validasi Input
+        // Sekarang NIK dibuat 'nullable' (opsional) untuk semua jenis layanan
         $request->validate([
             'nama' => 'required|string|max:255',
             'layanan_id' => 'required|exists:layanans,id',
-            'nik' => 'required|numeric|digits:16',
+            'nik' => 'nullable|numeric|digits:16',
         ], [
-            'nik.required' => 'NIK wajib diisi untuk melakukan pendaftaran.',
-            'nik.digits'   => 'NIK harus berjumlah tepat 16 digit angka.',
-            'nik.numeric'  => 'NIK harus berupa angka.',
             'nama.required' => 'Nama lengkap wajib diisi.',
-            'layanan_id.required' => 'Jenis layanan tidak valid.'
+            'nik.numeric'   => 'NIK harus berupa angka.',
+            'nik.digits'    => 'Jika diisi, NIK harus berjumlah tepat 16 digit.',
         ]);
 
         // 4. Hitung urutan antrian per layanan KHUSUS HARI INI
@@ -54,8 +51,7 @@ class UserDashboardController extends Controller
         $nomorUrut = $count + 1;
 
         /** * FORMAT NOMOR ANTRIAN:
-         * Menggabungkan Prefix Layanan (A, B, C, dst) dengan 3 digit urutan.
-         * Contoh: A001, B012
+         * Mengambil prefix dari database layanan (contoh: A, B, C)
          */
         $nomorAntrian = $layanan->prefix . str_pad($nomorUrut, 3, '0', STR_PAD_LEFT);
 
@@ -63,7 +59,7 @@ class UserDashboardController extends Controller
         $queue = Queue::create([
             'nomor_antrian'  => $nomorAntrian,
             'nama_pendaftar' => $request->nama,
-            'nik'            => $request->nik,
+            'nik'            => $request->nik ?? null, // Simpan null jika tidak diisi
             'layanan_id'     => $request->layanan_id,
             'loket_id'       => null, 
             'status'         => 'menunggu',
@@ -72,16 +68,15 @@ class UserDashboardController extends Controller
         ]);
 
         /**
-         * 6. REDIRECT KE WELCOME (HALAMAN UTAMA)
-         * Membawa data sukses untuk ditampilkan di modal/popup tanda terima antrian
+         * 6. REDIRECT KE HALAMAN WELCOME DENGAN DATA SUKSES UNTUK STRUK
          */
         return redirect()->route('welcome')->with('success_data', [
             'id'      => $queue->id,
             'nomor'   => $nomorAntrian,
             'nama'    => $request->nama,
-            'nik'     => $queue->nik,
+            'nik'     => $queue->nik ?? '-', // Tampilkan strip di struk jika NIK kosong
             'layanan' => $layanan->nama_layanan,
-            'waktu'   => $now->format('H:i') . ' WIB',
+            'waktu'   => $now->format('H:i'),
             'tanggal' => $now->translatedFormat('d F Y')
         ]);
     }

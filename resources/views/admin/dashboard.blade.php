@@ -6,15 +6,15 @@
         <p class="text-muted">Pantau seluruh aktivitas antrian Dukcapil di sini secara realtime.</p>
     </div>
 
-    {{-- Ringkasan Statistik (5 Status Terpadu) --}}
-    <div class="row g-4 mb-4">
+    {{-- Ringkasan Statistik (6 Status Utama) --}}
+    <div class="row g-3 mb-4">
         {{-- Total Antrian --}}
-        <div class="col-md-2-5 col-sm-6">
+        <div class="col-xl-2 col-md-4 col-sm-6">
             <div class="card bg-primary text-white border-0 shadow-sm h-100">
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-uppercase small fw-bold opacity-75">Total Antrian</h6>
+                            <h6 class="text-uppercase small fw-bold opacity-75">Total</h6>
                             <h2 class="fw-bold mb-0" id="total-antrian-count">{{ $totalAntrian ?? 0 }}</h2>
                         </div>
                         <i class="fas fa-users fa-2x opacity-25"></i>
@@ -24,7 +24,7 @@
         </div>
 
         {{-- Menunggu --}}
-        <div class="col-md-2-5 col-sm-6">
+        <div class="col-xl-2 col-md-4 col-sm-6">
             <div class="card bg-secondary text-white border-0 shadow-sm h-100">
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
@@ -38,9 +38,24 @@
             </div>
         </div>
 
-        {{-- Sedang Diproses --}}
-        <div class="col-md-2-5 col-sm-6">
+        {{-- Dipanggil (Proses Awal) --}}
+        <div class="col-xl-2 col-md-4 col-sm-6">
             <div class="card bg-info text-white border-0 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase small fw-bold opacity-75">Dipanggil</h6>
+                            <h2 class="fw-bold mb-0" id="dipanggil-count">{{ $dipanggil ?? 0 }}</h2>
+                        </div>
+                        <i class="fas fa-volume-up fa-2x opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Sedang Diproses --}}
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="card bg-dark text-white border-0 shadow-sm h-100">
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
@@ -53,8 +68,23 @@
             </div>
         </div>
 
-        {{-- Selesai Dilayani --}}
-        <div class="col-md-2-5 col-sm-6">
+        {{-- Pengambilan Dokumen --}}
+        <div class="col-xl-2 col-md-4 col-sm-6">
+            <div class="card bg-warning text-white border-0 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase small fw-bold opacity-75">Ambil Dokumen</h6>
+                            <h2 class="fw-bold mb-0" id="pengambilan-count">{{ $pengambilanDokumen ?? 0 }}</h2>
+                        </div>
+                        <i class="fas fa-file-export fa-2x opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Selesai --}}
+        <div class="col-xl-2 col-md-4 col-sm-6">
             <div class="card bg-success text-white border-0 shadow-sm h-100">
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
@@ -67,34 +97,19 @@
                 </div>
             </div>
         </div>
-
-        {{-- Pengambilan Dokumen --}}
-        <div class="col-md-2-5 col-sm-6">
-            <div class="card bg-warning text-white border-0 shadow-sm h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-uppercase small fw-bold opacity-75">Pengambilan Dokumen</h6>
-                            <h2 class="fw-bold mb-0" id="pengambilan-count">{{ $pengambilanDokumen ?? 0 }}</h2>
-                        </div>
-                        <i class="fas fa-file-export fa-2x opacity-25"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
-    {{-- Baris Kedua (Dilewati) --}}
+    {{-- Status Tambahan: Dilewati --}}
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card bg-danger text-white border-0 shadow-sm">
+            <div class="card border-start border-danger border-4 shadow-sm">
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-uppercase small fw-bold opacity-75">Dilewati</h6>
-                            <h3 class="fw-bold mb-0" id="lewat-count">{{ $lewat ?? 0 }}</h3>
+                            <h6 class="text-uppercase small fw-bold text-danger">Total Dilewati</h6>
+                            <h3 class="fw-bold mb-0 text-dark" id="lewat-count">{{ $lewat ?? 0 }}</h3>
                         </div>
-                        <i class="fas fa-times-circle fa-2x opacity-25"></i>
+                        <i class="fas fa-user-slash fa-2x text-danger opacity-25"></i>
                     </div>
                 </div>
             </div>
@@ -119,7 +134,7 @@
                     <i class="fas fa-external-link-alt me-2"></i> Cek Display
                 </a>
                 <a href="{{ route('admin.reset-display') }}" onclick="return confirm('PERHATIAN: Ini akan menghapus seluruh data antrian hari ini. Lanjutkan?')" class="btn btn-outline-danger px-4 py-2 fw-bold rounded-pill shadow-sm">
-                    <i class="fas fa-rotate me-2"></i> Reset Sistem (Mulai 0)
+                    <i class="fas fa-rotate me-2"></i> Reset Sistem
                 </a>
             </div>
         </div>
@@ -137,8 +152,8 @@
                         <th class="ps-4">No. Antrian</th>
                         <th>Nama Pendaftar</th>
                         <th>Layanan</th>
-                        <th>Status</th>
-                        <th>Petugas & Loket</th>
+                        <th>Status Saat Ini</th>
+                        <th>Lokasi/Loket Terakhir</th>
                         <th class="text-end pe-4">Waktu</th>
                     </tr>
                 </thead>
@@ -150,31 +165,36 @@
                         <td><span class="badge bg-light text-dark border">{{ $item->layanan->nama_layanan ?? '-' }}</span></td>
                         <td>
                             @php
-                                $status = $item->status;
-                                // Logika penanganan status 'diproses' jika petugas sudah mengambil namun status DB masih menunggu
-                                if ($status == 'menunggu' && !empty($item->user_id)) {
-                                    $status = 'diproses';
+                                $statusLabel = $item->status;
+                                $badgeClass = 'bg-secondary';
+                                
+                                if($item->status == 'menunggu') $badgeClass = 'bg-secondary';
+                                elseif($item->status == 'dipanggil') $badgeClass = 'bg-info text-white animate-pulse';
+                                elseif($item->status == 'diproses') $badgeClass = 'bg-primary';
+                                elseif($item->status == 'pengambilan_dokumen') {
+                                    $badgeClass = 'bg-warning text-dark border border-warning shadow-sm';
+                                    $statusLabel = 'Pengambilan Dokumen';
                                 }
+                                elseif($item->status == 'selesai') $badgeClass = 'bg-success';
+                                elseif($item->status == 'lewat') $badgeClass = 'bg-danger';
                             @endphp
-                            
-                            @if($status == 'menunggu')
-                                <span class="badge bg-secondary">Menunggu</span>
-                            @elseif($status == 'diproses' || $status == 'dipanggil')
-                                <span class="badge bg-info text-dark">Diproses</span>
-                            @elseif($status == 'selesai')
-                                <span class="badge bg-success">Selesai</span>
-                            @elseif($status == 'pengambilan')
-                                <span class="badge bg-warning text-dark">Pengambilan Dokumen</span>
-                            @elseif($status == 'lewat')
-                                <span class="badge bg-danger">Dilewati</span>
-                            @endif
+
+                            <span class="badge {{ $badgeClass }}">
+                                @if($item->status == 'dipanggil') <i class="fas fa-volume-up me-1"></i> @endif
+                                @if($item->status == 'pengambilan_dokumen') <i class="fas fa-file-signature me-1"></i> @endif
+                                {{ ucfirst(str_replace('_', ' ', $statusLabel)) }}
+                            </span>
                         </td>
                         <td>
-                            @if($item->petugas)
-                                <div class="small fw-bold text-dark"><i class="fas fa-user-tie me-1"></i> {{ $item->petugas->name }}</div>
-                                <div class="small text-muted"><i class="fas fa-desktop me-1"></i> {{ $item->loket->nama_loket ?? '-' }}</div>
+                            @if($item->user_id)
+                                <div class="small fw-bold text-dark">
+                                    <i class="fas fa-desktop me-1 text-muted"></i> {{ $item->loket->nama_loket ?? 'Loket' }}
+                                </div>
+                                <div class="small text-muted">
+                                    <i class="fas fa-user-tie me-1"></i> {{ $item->petugas->name ?? '-' }}
+                                </div>
                             @else
-                                <span class="text-muted small">Belum dipanggil</span>
+                                <span class="text-muted small italic">Belum dipanggil loket</span>
                             @endif
                         </td>
                         <td class="text-end pe-4 small text-muted">
@@ -193,33 +213,56 @@
 
     {{-- Script Realtime Update --}}
     <script>
-        function fetchRealtimeStats() {
-            fetch("{{ route('admin.realtime-stats') }}")
-                .then(response => response.json())
-                .then(data => {
-                    // Update Widget Card
-                    document.getElementById('total-antrian-count').innerText = data.totalAntrian;
-                    document.getElementById('menunggu-count').innerText = data.menunggu;
-                    document.getElementById('diproses-count').innerText = data.diproses;
-                    document.getElementById('selesai-count').innerText = data.selesai;
-                    document.getElementById('lewat-count').innerText = data.lewat;
-                    // ID disesuaikan menjadi pengambilan-count
-                    document.getElementById('pengambilan-count').innerText = data.pengambilanDokumen || 0;
-                })
-                .catch(error => console.error('Error fetching stats:', error));
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            function fetchRealtimeStats() {
+                fetch("{{ route('admin.realtime-stats') }}")
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Mapping ID element ke Key JSON dari Controller
+                        const mappings = {
+                            'total-antrian-count': data.totalAntrian,
+                            'menunggu-count': data.menunggu,
+                            'dipanggil-count': data.dipanggil,
+                            'diproses-count': data.diproses,
+                            'pengambilan-count': data.pengambilanDokumen || data.pengambilan_dokumen,
+                            'selesai-count': data.selesai,
+                            'lewat-count': data.lewat
+                        };
 
-        // Jalankan setiap 3 detik
-        setInterval(fetchRealtimeStats, 3000);
+                        for (const [id, value] of Object.entries(mappings)) {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                el.innerText = value !== undefined && value !== null ? value : 0;
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error fetching stats:', error));
+            }
+
+            // Panggil langsung saat halaman dimuat pertama kali
+            fetchRealtimeStats();
+
+            // Jalankan fetch rutin setiap 3 detik
+            setInterval(fetchRealtimeStats, 3000);
+        });
     </script>
 
     <style>
-        /* Custom Grid untuk 5 Kolom Statistik */
-        .col-md-2-5 { width: 20%; flex: 0 0 20%; padding: 0 10px; }
-        @media (max-width: 992px) { .col-md-2-5 { width: 33.33%; flex: 0 0 33.33%; } }
-        @media (max-width: 768px) { .col-md-2-5 { width: 50%; flex: 0 0 50%; } }
-        @media (max-width: 576px) { .col-md-2-5 { width: 100%; flex: 0 0 100%; } }
-        
         .fa-spin-slow { animation: fa-spin 3s infinite linear; }
+        .badge { font-weight: 600; padding: 0.5em 0.8em; border-radius: 6px; }
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-4px); }
+        
+        @keyframes pulse-opacity {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        .animate-pulse {
+            animation: pulse-opacity 1.5s infinite ease-in-out;
+        }
     </style>
 @endsection

@@ -35,42 +35,68 @@
                             </div>
 
                             <div class="d-grid gap-3">
-                                {{-- LOGIKA TOMBOL DINAMIS --}}
+                                {{-- LOGIKA TOMBOL BERDASARKAN JENIS PETUGAS --}}
                                 @php
                                     $isLoketPengambilan = is_null(auth()->user()->layanan_id);
-                                    $isRekamKtp = (auth()->user()->layanan?->nama_layanan == 'Pelayanan Rekam KTP');
+                                    $isRekamKTP = str_contains(strtolower(auth()->user()->layanan?->nama_layanan ?? ''), 'rekam');
                                 @endphp
 
-                                @if($isLoketPengambilan || $isRekamKtp)
-                                    {{-- Hanya Selesai & Arsip untuk Pengambilan & Rekam KTP --}}
+                                @if($isRekamKTP)
+                                    {{-- AKSI KHUSUS REKAM KTP --}}
+                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0">
+                                            <i class="fas fa-check-circle me-2"></i> SELESAI & TUTUP ANTRIAN
+                                        </button>
+                                    </form>
+                                    
+                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3">
+                                            LEWATI NOMOR INI <i class="fas fa-step-forward ms-1"></i>
+                                        </button>
+                                    </form>
+                                    <small class="text-muted d-block mt-1">* Layanan Rekam KTP langsung diarsipkan (Selesai).</small>
+
+                                @elseif($isLoketPengambilan)
+                                    {{-- AKSI KHUSUS LOKET PENGAMBILAN --}}
                                     <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0">
                                             <i class="fas fa-check-double me-2"></i> SELESAI & ARSIP
                                         </button>
                                     </form>
+
+                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3">
+                                            LEWATI NOMOR INI <i class="fas fa-step-forward ms-1"></i>
+                                        </button>
+                                    </form>
                                 @else
-                                    {{-- Layanan Umum lainnya: Lempar ke Pengembalian --}}
-                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'pengambilan']) }}" method="POST">
+                                    {{-- AKSI UNIT LAIN (NON-REKAM): OPER KE PENGAMBILAN --}}
+                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold py-3 shadow-sm border-0 text-white">
-                                            <i class="fas fa-file-export me-2"></i> SELESAI & KE PENGAMBILAN
+                                            <i class="fas fa-arrow-right me-2"></i> SELESAI PELAYANAN
+                                        </button>
+                                    </form>
+
+                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3">
+                                            LEWATI NOMOR INI <i class="fas fa-step-forward ms-1"></i>
                                         </button>
                                     </form>
                                 @endif
 
-                                {{-- Tombol Panggil Berikutnya --}}
+                                <hr class="my-2">
+
+                                {{-- TOMBOL PANGGIL BERIKUTNYA --}}
                                 <form action="{{ route('petugas.panggil') }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-lg py-3 border-0" style="background: linear-gradient(45deg, #0d6efd, #0043a8);">
                                         NOMOR BERIKUTNYA <i class="fas fa-chevron-right ms-2"></i>
-                                    </button>
-                                </form>
-                                
-                                <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3">
-                                        LEWATI NOMOR INI <i class="fas fa-step-forward ms-1"></i>
                                     </button>
                                 </form>
                             </div>
@@ -106,11 +132,12 @@
 
         {{-- DAFTAR ANTRIAN --}}
         <div class="col-md-8">
+            {{-- 1. TABEL DAFTAR TUNGGU --}}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-bold text-primary">
                         <i class="fas fa-list-ol me-2"></i> 
-                        {{ is_null(auth()->user()->layanan_id) ? 'Siap Diambil (Hasil Layanan)' : 'Daftar Tunggu Unit' }}
+                        {{ is_null(auth()->user()->layanan_id) ? 'Siap Diambil (Dokumen Selesai Pelayanan)' : 'Daftar Tunggu Unit' }}
                     </h5>
                     <span id="count-menunggu" class="badge bg-danger rounded-pill px-3">{{ $antrian->count() }} Orang</span>
                 </div>
@@ -123,7 +150,7 @@
                                     <th>NIK</th>
                                     <th>Nama Pendaftar</th>
                                     <th>Layanan Asal</th>
-                                    <th class="text-center">Jam</th>
+                                    <th class="text-center">Waktu</th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-menunggu">
@@ -134,7 +161,7 @@
                                     <td class="fw-bold">{{ $a->nama_pendaftar }}</td>
                                     <td><span class="badge bg-info text-dark">{{ $a->layanan?->nama_layanan ?? 'N/A' }}</span></td>
                                     <td class="text-center small text-muted">
-                                        {{ is_null(auth()->user()->layanan_id) ? $a->updated_at->format('H:i') : $a->created_at->format('H:i') }}
+                                        {{ is_null(auth()->user()->layanan_id) ? 'Selesai: '.$a->updated_at->format('H:i') : 'Daftar: '.$a->created_at->format('H:i') }}
                                     </td>
                                 </tr>
                                 @empty
@@ -148,8 +175,8 @@
                 </div>
             </div>
 
-            {{-- TABEL DILEWATI --}}
-            <div class="card border-0 shadow-sm">
+            {{-- 2. TABEL DAFTAR DILEWATI --}}
+            <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white py-3 border-0">
                     <h5 class="mb-0 fw-bold text-secondary"><i class="fas fa-history me-2"></i> Baru Saja Dilewati</h5>
                 </div>
@@ -190,6 +217,41 @@
                     </div>
                 </div>
             </div>
+
+            {{-- 3. TABEL DAFTAR SELESAI --}}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="mb-0 fw-bold text-success"><i class="fas fa-check-double me-2"></i> Daftar Selesai Hari Ini</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4" width="120">No</th>
+                                    <th>Nama Pendaftar</th>
+                                    <th>Status Akhir</th>
+                                    <th class="text-center">Jam Selesai</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-selesai">
+                                @forelse($selesai ?? [] as $sl)
+                                <tr>
+                                    <td class="ps-4"><span class="fw-bold text-success">{{ $sl->nomor_antrian }}</span></td>
+                                    <td class="fw-bold">{{ $sl->nama_pendaftar }}</td>
+                                    <td><span class="badge bg-soft-success text-success">Selesai</span></td>
+                                    <td class="text-center small text-muted">{{ $sl->updated_at->format('H:i') }}</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted small">Belum ada antrian selesai hari ini.</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -205,6 +267,7 @@
             type: "GET",
             dataType: "json",
             success: function(response) {
+                // Update Badge & Counter
                 $('#count-menunggu').text(response.count + ' Orang');
                 $('#wait-count').text(response.count);
 
@@ -213,6 +276,7 @@
                 }
                 lastAntrianCount = response.count;
 
+                // 1. Update HTML Tabel Menunggu
                 let htmlMenunggu = '';
                 if (response.antrian.length > 0) {
                     response.antrian.forEach(function(a) {
@@ -232,6 +296,7 @@
                 }
                 $('#tbody-menunggu').html(htmlMenunggu);
 
+                // 2. Update HTML Tabel Dilewati
                 let htmlSkipped = '';
                 if (response.skipped.length > 0) {
                     response.skipped.forEach(function(s) {
@@ -258,6 +323,25 @@
                     htmlSkipped = '<tr><td colspan="3" class="text-center py-4 text-muted small">Tidak ada nomor dilewati.</td></tr>';
                 }
                 $('#tbody-skipped').html(htmlSkipped);
+
+                // 3. Update HTML Tabel Selesai (Jika data dikirim dari Controller)
+                if(response.selesai) {
+                    let htmlSelesai = '';
+                    if (response.selesai.length > 0) {
+                        response.selesai.forEach(function(sl) {
+                            htmlSelesai += `
+                                <tr>
+                                    <td class="ps-4"><span class="fw-bold text-success">${sl.nomor_antrian}</span></td>
+                                    <td class="fw-bold">${sl.nama_pendaftar}</td>
+                                    <td><span class="badge bg-soft-success text-success">Selesai</span></td>
+                                    <td class="text-center small text-muted">Baru saja</td>
+                                </tr>`;
+                        });
+                    } else {
+                        htmlSelesai = '<tr><td colspan="4" class="text-center py-4 text-muted small">Belum ada antrian selesai.</td></tr>';
+                    }
+                    $('#tbody-selesai').html(htmlSelesai);
+                }
             }
         });
     }
@@ -270,6 +354,7 @@
 <style>
     .fw-800 { font-weight: 800; }
     .bg-soft-primary { background-color: rgba(13, 110, 253, 0.1); }
+    .bg-soft-success { background-color: rgba(25, 135, 84, 0.1); }
     .rounded-4 { border-radius: 1.5rem !important; }
     .table thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .btn-lg { border-radius: 12px; }

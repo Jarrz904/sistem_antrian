@@ -15,8 +15,10 @@ return new class extends Migration {
             $table->string('nomor_antrian'); 
             $table->string('nama_pendaftar');
             
-            // nullable() memungkinkan pendaftaran Akte Kematian tanpa NIK tetap tersimpan
-            $table->string('nik', 16)->nullable();
+            /** * NIK WAJIB: Sesuai permintaan terbaru agar NIK wajib diisi 16 digit.
+             * Nullable dihapus agar validasi database sinkron dengan controller.
+             */
+            $table->string('nik', 16);
             
             $table->foreignId('layanan_id')->constrained()->onDelete('cascade');
             $table->foreignId('loket_id')->nullable()->constrained()->onDelete('set null');
@@ -24,9 +26,13 @@ return new class extends Migration {
             // Menghubungkan ke tabel users (petugas yang memproses antrian)
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             
-            /** * PERBAIKAN: Menggunakan string menggantikan ENUM agar tidak terjadi 
-             * error 'Data truncated' saat menerima status yang lebih panjang.
-             * Status yang didukung: 'menunggu', 'dipanggil', 'lewat', 'pengembalian', 'selesai'
+            /** * ALUR 6 STATUS (String Based):
+             * 1. menunggu            : Antrian baru terdaftar.
+             * 2. dipanggil           : Sedang dipanggil oleh petugas loket pelayanan.
+             * 3. dilewati            : Masyarakat tidak hadir saat dipanggil loket pelayanan.
+             * 4. diproses            : Petugas selesai melayani & dokumen sedang diproduksi/dikerjakan.
+             * 5. pengambilan_dokumen : Sedang dipanggil oleh petugas loket pengambilan.
+             * 6. selesai             : Dokumen sudah diterima, antrian selesai sepenuhnya.
              */
             $table->string('status')->default('menunggu');
             

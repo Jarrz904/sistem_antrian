@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ambil Antrian - Sistem Layanan Publik</title>
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
 
     <style>
         :root {
@@ -16,12 +18,13 @@
             --text-muted: #333333;
         }
 
-        html, body {
+        html,
+        body {
             height: 100vh;
             width: 100vw;
             margin: 0;
             padding: 0;
-            overflow: hidden; 
+            overflow: hidden;
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #f0f2f5;
             color: var(--text-dark);
@@ -79,7 +82,7 @@
             border: 4px solid #e9ecef;
             border-radius: 30px;
             background: #ffffff;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
             padding: 2vh 2vw !important;
@@ -154,149 +157,150 @@
             background: white;
             padding: 1vh 1.5vw;
             border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             z-index: 100;
             font-size: 1rem;
         }
 
-        .modal-content { border-radius: 35px; border: none; }
-        .form-control-custom { 
-            border-radius: 18px; padding: 18px; 
-            background-color: #f8f9fa; border: 3px solid #dee2e6;
-            font-size: 1.3rem; font-weight: 800;
+        .modal-content {
+            border-radius: 35px;
+            border: none;
+        }
+
+        .form-control-custom {
+            border-radius: 18px;
+            padding: 18px;
+            background-color: #f8f9fa;
+            border: 3px solid #dee2e6;
+            font-size: 1.3rem;
+            font-weight: 800;
         }
 
         @media (max-width: 992px) {
-            .services-grid, .grid-layout-wide {
+            .services-grid,
+            .grid-layout-wide {
                 grid-template-columns: repeat(2, 1fr) !important;
             }
         }
     </style>
 </head>
+
 <body>
 
-<div class="page-wrapper">
-    <a href="{{ url('/') }}" class="btn-back">
-        <i class="fas fa-arrow-left me-2"></i> KEMBALI
-    </a>
+    <div class="page-wrapper">
+        <a href="{{ url('/') }}" class="btn-back">
+            <i class="fas fa-arrow-left me-2"></i> KEMBALI
+        </a>
 
-    <header class="compact-header">
-        <h1 class="header-title">SISTEM ANTRIAN LAYANAN</h1>
-        <p class="header-subtitle">Silahkan pilih jenis layanan yang Anda butuhkan</p>
-    </header>
+        <header class="compact-header">
+            <h1 class="header-title">SISTEM ANTRIAN LAYANAN</h1>
+            <p class="header-subtitle">Silahkan pilih jenis layanan yang Anda butuhkan</p>
+        </header>
 
-    <main class="content-section">
-        <div class="services-grid {{ count($layanans) > 6 ? 'grid-layout-wide' : '' }}">
-            @foreach($layanans as $l)
-            <div class="card card-layanan">
-                <div class="icon-wrapper">
-                    <i class="{{ $l->icon ?? 'fas fa-file-invoice' }} fa-2x"></i>
-                </div>
-                <h3 class="card-title">{{ $l->nama_layanan }}</h3>
-                <div class="card-text">
-                    {{ $l->deskripsi ?? 'Silahkan ambil nomor antrian untuk mendapatkan pelayanan.' }}
-                </div>
-                <button type="button" 
-                        class="btn btn-primary btn-pilih" 
-                        onclick="pilihLayanan('{{ $l->id }}', '{{ $l->nama_layanan }}')">
-                    AMBIL NOMOR
-                </button>
-            </div>
-            @endforeach
-        </div>
-    </main>
-</div>
-
-<div class="modal fade" id="modalInputAntrian" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content shadow-lg">
-            <div class="modal-body p-5">
-                <div class="text-center mb-4">
-                    <h1 class="fw-800 text-primary" id="titleLayanan" style="font-size: 2.2rem;">DETAIL ANTRIAN</h1>
-                    <p class="text-muted fw-bold fs-5">Lengkapi data diri Anda secara benar</p>
-                </div>
-
-                <form action="{{ route('user.store') }}" method="POST" id="formAntrian">
-                    @csrf
-                    <input type="hidden" name="layanan_id" id="selected_layanan_id">
-                    
-                    <div class="mb-4">
-                        <label class="form-label fw-800 fs-4">Nama Lengkap</label>
-                        <input type="text" name="nama" class="form-control form-control-custom" placeholder="Tulis nama sesuai KTP" required autocomplete="off">
+        <main class="content-section">
+            <div class="services-grid {{ count($layanans) > 6 ? 'grid-layout-wide' : '' }}">
+                @foreach($layanans as $l)
+                    <div class="card card-layanan">
+                        <div class="icon-wrapper">
+                            <i class="{{ $l->icon ?? 'fas fa-file-invoice' }} fa-2x"></i>
+                        </div>
+                        <h3 class="card-title">{{ $l->nama_layanan }}</h3>
+                        <div class="card-text">
+                            {{ $l->deskripsi ?? 'Silahkan ambil nomor antrian untuk mendapatkan pelayanan.' }}
+                        </div>
+                        <button type="button" class="btn btn-primary btn-pilih"
+                            onclick="pilihLayanan('{{ $l->id }}', '{{ $l->nama_layanan }}')">
+                            AMBIL NOMOR
+                        </button>
                     </div>
-
-                    <div class="mb-5" id="nik_container">
-                        <label class="form-label fw-800 fs-4">Nomor NIK (Wajib 16 Digit)</label>
-                        <input type="number" name="nik" id="input_nik" class="form-control form-control-custom" 
-                               placeholder="Masukkan 16 digit NIK Anda" required
-                               oninput="if (this.value.length > 16) this.value = this.value.slice(0, 16);">
-                        <small class="text-danger fw-bold mt-2 d-block">* Pastikan NIK yang dimasukkan benar.</small>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-800 shadow-lg" style="font-size: 1.8rem;">
-                        KONFIRMASI
-                    </button>
-                </form>
+                @endforeach
             </div>
-        </div>
+        </main>
     </div>
-</div>
 
-@if(session('success_data'))
-<div class="modal fade" id="modalSukses" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content text-center p-5">
-            <div class="modal-body">
-                <div class="text-success mb-3"><i class="fas fa-check-circle fa-7x"></i></div>
-                <h1 class="fw-800 display-4">BERHASIL!</h1>
-                <div id="printArea" class="border border-5 rounded-5 p-4 my-4 bg-white shadow-sm">
-                    <p class="text-dark fw-800 fs-2 mb-0">NOMOR ANTRIAN</p>
-                    <h1 class="display-1 fw-800 text-primary my-1" style="font-size: 7rem;">{{ session('success_data')['nomor'] }}</h1>
-                    <h2 class="fw-800 text-dark fs-1">{{ strtoupper(session('success_data')['layanan']) }}</h2>
-                    <p class="fw-800 text-muted fs-3">{{ session('success_data')['waktu'] }} WIB</p>
-                </div>
-                <div class="d-grid gap-3">
-                    <button onclick="printAntrian()" class="btn btn-primary btn-lg rounded-pill fw-800 py-3 fs-2">CETAK STRUK</button>
-                    <a href="{{ url('/ambil-antrian') }}" class="btn btn-link text-decoration-none fw-800 fs-4 text-muted">SELESAI</a>
+    {{-- MODAL INPUT DATA - HANYA NAMA --}}
+    <div class="modal fade" id="modalInputAntrian" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content shadow-lg">
+                <div class="modal-body p-5">
+                    <div class="text-center mb-4">
+                        <h1 class="fw-800 text-primary" id="titleLayanan" style="font-size: 2.2rem;">DETAIL ANTRIAN</h1>
+                        <p class="text-muted fw-bold fs-5">Lengkapi nama Anda untuk mengambil nomor</p>
+                    </div>
+
+                    <form action="{{ route('user.store') }}" method="POST" id="formAntrian">
+                        @csrf
+                        <input type="hidden" name="layanan_id" id="selected_layanan_id">
+
+                        <div class="mb-5">
+                            <label class="form-label fw-800 fs-4">Nama Lengkap</label>
+                            <input type="text" name="nama" class="form-control form-control-custom"
+                                placeholder="Masukkan nama Anda" required autocomplete="off">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-800 shadow-lg"
+                            style="font-size: 1.8rem;">
+                            KONFIRMASI
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-</div>
-@endif
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-    let inputModalObj;
-
-    function pilihLayanan(id, nama) {
-        // Reset Form
-        document.getElementById('formAntrian').reset();
-        
-        // Set Data
-        document.getElementById('selected_layanan_id').value = id;
-        document.getElementById('titleLayanan').innerText = nama.toUpperCase();
-        
-        // Pastikan input NIK selalu required dan terlihat
-        const inputNik = document.getElementById('input_nik');
-        inputNik.setAttribute('required', 'required');
-        
-        if (!inputModalObj) {
-            inputModalObj = new bootstrap.Modal(document.getElementById('modalInputAntrian'));
-        }
-        inputModalObj.show();
-    }
-
+    {{-- MODAL SUKSES --}}
     @if(session('success_data'))
-        document.addEventListener('DOMContentLoaded', function() {
-            const modalSuksesObj = new bootstrap.Modal(document.getElementById('modalSukses'));
-            modalSuksesObj.show();
-        });
+        <div class="modal fade" id="modalSukses" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content text-center p-5">
+                    <div class="modal-body">
+                        <div class="text-success mb-3"><i class="fas fa-check-circle fa-7x"></i></div>
+                        <h1 class="fw-800 display-4">BERHASIL!</h1>
+                        <div id="printArea" class="border border-5 rounded-5 p-4 my-4 bg-white shadow-sm">
+                            <p class="text-dark fw-800 fs-2 mb-0">NOMOR ANTRIAN</p>
+                            <h1 class="display-1 fw-800 text-primary my-1" style="font-size: 7rem;">
+                                {{ session('success_data')['nomor'] }}</h1>
+                            <h2 class="fw-800 text-dark fs-1">{{ strtoupper(session('success_data')['layanan']) }}</h2>
+                            <p class="fw-800 text-muted fs-3">{{ session('success_data')['waktu'] }} WIB</p>
+                        </div>
+                        <div class="d-grid gap-3">
+                            <button onclick="printAntrian()"
+                                class="btn btn-primary btn-lg rounded-pill fw-800 py-3 fs-2">CETAK STRUK</button>
+                            <a href="{{ url('/ambil-antrian') }}"
+                                class="btn btn-link text-decoration-none fw-800 fs-4 text-muted">SELESAI</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     @endif
 
-    function printAntrian() { window.print(); }
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    <script>
+        let inputModalObj;
+
+        function pilihLayanan(id, nama) {
+            const form = document.getElementById('formAntrian');
+            form.reset();
+
+            document.getElementById('selected_layanan_id').value = id;
+            document.getElementById('titleLayanan').innerText = nama.toUpperCase();
+
+            if (!inputModalObj) {
+                inputModalObj = new bootstrap.Modal(document.getElementById('modalInputAntrian'));
+            }
+            inputModalObj.show();
+        }
+
+        @if(session('success_data'))
+            document.addEventListener('DOMContentLoaded', function () {
+                const modalSuksesObj = new bootstrap.Modal(document.getElementById('modalSukses'));
+                modalSuksesObj.show();
+            });
+        @endif
+
+        function printAntrian() { window.print(); }
+    </script>
 </body>
 </html>

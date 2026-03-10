@@ -33,7 +33,8 @@ class PetugasController extends Controller
             'username'   => 'required|string|unique:users',
             'password'   => 'required|min:6',
             'loket_id'   => 'required|exists:lokets,id',
-            'layanan_id' => 'required|exists:layanans,id',
+            // layanan_id boleh null jika dia adalah petugas loket pengambilan dokumen
+            'layanan_id' => 'nullable|exists:layanans,id', 
         ]);
 
         User::create([
@@ -61,7 +62,7 @@ class PetugasController extends Controller
             'name'       => 'required|string|max:255',
             'username'   => 'required|string|unique:users,username,' . $id,
             'loket_id'   => 'required|exists:lokets,id',
-            'layanan_id' => 'required|exists:layanans,id',
+            'layanan_id' => 'nullable|exists:layanans,id',
         ]);
 
         $data = [
@@ -93,7 +94,8 @@ class PetugasController extends Controller
     }
 
     /**
-     * Fitur Eksport Data Antrian (CSV) - Versi Sinkron 5 Status
+     * Fitur Eksport Data Antrian (CSV) 
+     * Disesuaikan untuk membedakan Rekam KTP dan layanan reguler
      */
     public function exportMasyarakat()
     {
@@ -125,7 +127,7 @@ class PetugasController extends Controller
                 'Waktu Daftar', 
                 'Loket', 
                 'Petugas yang Menanggapi', 
-                'Status'
+                'Status Akhir'
             ]);
 
             foreach ($data as $row) {
@@ -135,28 +137,26 @@ class PetugasController extends Controller
                 $nikExport = !empty($row->nik) ? $row->nik . "\t" : '-';
 
                 /**
-                 * Logika Penentuan 5 Status untuk CSV
-                 * Menangani 'pengambilan' -> 'Pengambilan Dokumen'
-                 * Menangani 'dipanggil'/'diproses' -> 'Diproses'
+                 * Logika Penentuan Status untuk CSV
+                 * Memastikan layanan Rekam KTP terlihat "Selesai" tanpa "Pengambilan"
                  */
-                if ($row->status == 'selesai') {
-                    $statusLabel = 'Selesai';
-                } elseif ($row->status == 'pengambilan') {
-                    $statusLabel = 'Pengambilan Dokumen';
-                } elseif ($row->status == 'lewat') {
-                    $statusLabel = 'Dilewati';
-                } elseif (in_array($row->status, ['diproses', 'dipanggil']) || ($row->status == 'menunggu' && !empty($row->user_id))) {
-                    $statusLabel = 'Diproses';
-                } else {
-                    $statusLabel = 'Menunggu';
-                }
+                $isRekam = str_contains(strtolower($row->layanan->nama_layanan ?? ''), 'rekam');
+
+                $statusLabel = match($row->status) {
+                    'selesai'             => $isRekam ? 'Selesai (Rekam KTP)' : 'Selesai (Arsip)',
+                    'pengambilan_dokumen' => 'Menunggu Pengambilan',
+                    'diproses'            => 'Sedang Dilayani',
+                    'dipanggil'           => 'Baru Dipanggil',
+                    'lewat'               => 'Dilewati/Tidak Hadir',
+                    default               => 'Menunggu Antrian',
+                };
 
                 // Menulis baris data ke CSV
                 fputcsv($handle, [
                     $row->nomor_antrian,
                     $row->nama_pendaftar,
                     $nikExport, 
-                    $row->layanan->nama_layanan ?? '-',
+                    $row->layanan->nama_layanan ?? 'Umum/Pengambilan',
                     $waktu->translatedFormat('d F Y') . ' ' . $waktu->format('H:i'), 
                     $row->loket->nama_loket ?? '-',
                     $row->petugas->name ?? 'Belum Dipanggil',
