@@ -35,70 +35,52 @@
                             </div>
 
                             <div class="d-grid gap-3">
-                                {{-- LOGIKA TOMBOL BERDASARKAN JENIS PETUGAS --}}
+                                {{-- POSISI 1: TOMBOL PANGGIL BERIKUTNYA (SELALU DI ATAS) --}}
+                                <form action="{{ route('petugas.panggil') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-lg py-3 border-0 action-btn" style="background: linear-gradient(45deg, #0d6efd, #0043a8);">
+                                        NOMOR BERIKUTNYA <i class="fas fa-chevron-right ms-2"></i>
+                                    </button>
+                                </form>
+
+                                {{-- POSISI 2: TOMBOL LEWATI --}}
+                                <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3 action-btn">
+                                        LEWATI NOMOR INI <i class="fas fa-step-forward ms-1"></i>
+                                    </button>
+                                </form>
+
+                                {{-- POSISI 3: TOMBOL SELESAI (DINAMIS BERDASARKAN LAYANAN) --}}
                                 @php
                                     $isLoketPengambilan = is_null(auth()->user()->layanan_id);
                                     $isRekamKTP = str_contains(strtolower(auth()->user()->layanan?->nama_layanan ?? ''), 'rekam');
                                 @endphp
 
                                 @if($isRekamKTP)
-                                    {{-- AKSI KHUSUS REKAM KTP --}}
                                     <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0">
+                                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0 action-btn">
                                             <i class="fas fa-check-circle me-2"></i> SELESAI & TUTUP ANTRIAN
                                         </button>
                                     </form>
-                                    
-                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3">
-                                            LEWATI NOMOR INI <i class="fas fa-step-forward ms-1"></i>
-                                        </button>
-                                    </form>
-                                    <small class="text-muted d-block mt-1">* Layanan Rekam KTP langsung diarsipkan (Selesai).</small>
+                                    <small class="text-muted d-block mt-n2">* Layanan Rekam KTP langsung diarsipkan.</small>
 
                                 @elseif($isLoketPengambilan)
-                                    {{-- AKSI KHUSUS LOKET PENGAMBILAN --}}
                                     <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0">
+                                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0 action-btn">
                                             <i class="fas fa-check-double me-2"></i> SELESAI & ARSIP
                                         </button>
                                     </form>
-
-                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3">
-                                            LEWATI NOMOR INI <i class="fas fa-step-forward ms-1"></i>
-                                        </button>
-                                    </form>
                                 @else
-                                    {{-- AKSI UNIT LAIN (NON-REKAM): OPER KE PENGAMBILAN --}}
                                     <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold py-3 shadow-sm border-0 text-white">
+                                        <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold py-3 shadow-sm border-0 text-white action-btn">
                                             <i class="fas fa-arrow-right me-2"></i> SELESAI PELAYANAN
                                         </button>
                                     </form>
-
-                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3">
-                                            LEWATI NOMOR INI <i class="fas fa-step-forward ms-1"></i>
-                                        </button>
-                                    </form>
                                 @endif
-
-                                <hr class="my-2">
-
-                                {{-- TOMBOL PANGGIL BERIKUTNYA --}}
-                                <form action="{{ route('petugas.panggil') }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-lg py-3 border-0" style="background: linear-gradient(45deg, #0d6efd, #0043a8);">
-                                        NOMOR BERIKUTNYA <i class="fas fa-chevron-right ms-2"></i>
-                                    </button>
-                                </form>
                             </div>
 
                         @elseif($antrian->count() > 0)
@@ -112,7 +94,7 @@
                             
                             <form action="{{ route('petugas.panggil') }}" method="POST" class="mt-2">
                                 @csrf
-                                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-lg py-4 border-0" style="background: linear-gradient(45deg, #0d6efd, #0043a8);">
+                                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-lg py-4 border-0 action-btn" style="background: linear-gradient(45deg, #0d6efd, #0043a8);">
                                     PANGGIL ANTRIAN <i class="fas fa-volume-up ms-2"></i>
                                 </button>
                             </form>
@@ -132,7 +114,7 @@
 
         {{-- DAFTAR ANTRIAN --}}
         <div class="col-md-8">
-            {{-- 1. TABEL DAFTAR TUNGGU --}}
+            {{-- TABEL DAFTAR TUNGGU --}}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-bold text-primary">
@@ -175,7 +157,7 @@
                 </div>
             </div>
 
-            {{-- 2. TABEL DAFTAR DILEWATI --}}
+            {{-- TABEL DAFTAR DILEWATI --}}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white py-3 border-0">
                     <h5 class="mb-0 fw-bold text-secondary"><i class="fas fa-history me-2"></i> Baru Saja Dilewati</h5>
@@ -199,9 +181,9 @@
                                         <small class="text-muted">{{ $s->nik ?? 'Tanpa NIK' }} | {{ $s->updated_at->format('H:i') }}</small>
                                     </td>
                                     <td class="text-end pe-4">
-                                        <form action="{{ route('petugas.panggilUlang', $s->id) }}" method="POST">
+                                        <form action="{{ route('petugas.panggilUlang', $s->id) }}" method="POST" class="recall-form">
                                             @csrf
-                                            <button type="submit" class="btn btn-sm btn-warning fw-bold px-3 shadow-sm rounded-pill">
+                                            <button type="submit" class="btn btn-sm btn-warning fw-bold px-3 shadow-sm rounded-pill recall-btn">
                                                 RECALL <i class="fas fa-redo ms-1"></i>
                                             </button>
                                         </form>
@@ -218,7 +200,7 @@
                 </div>
             </div>
 
-            {{-- 3. TABEL DAFTAR SELESAI --}}
+            {{-- TABEL DAFTAR SELESAI --}}
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3 border-0">
                     <h5 class="mb-0 fw-bold text-success"><i class="fas fa-check-double me-2"></i> Daftar Selesai Hari Ini</h5>
@@ -261,13 +243,22 @@
     let lastAntrianCount = {{ $antrian->count() }};
     let isCurrentEmpty = {{ $current ? 'false' : 'true' }};
 
+    // FUNGSI LOCK: Mencegah double click dan tumpang tindih panggil
+    $(document).on('submit', 'form', function() {
+        const $btn = $(this).find('button[type="submit"]');
+        $btn.prop('disabled', true);
+        $btn.html('<span class="spinner-border spinner-border-sm me-2"></span> PROSES...');
+        
+        // Disable semua tombol aksi lainnya agar tidak bentrok
+        $('.action-btn, .recall-btn').addClass('disabled').prop('disabled', true);
+    });
+
     function fetchAntrianRealtime() {
         $.ajax({
             url: "{{ route('petugas.dashboard') }}",
             type: "GET",
             dataType: "json",
             success: function(response) {
-                // Update Badge & Counter
                 $('#count-menunggu').text(response.count + ' Orang');
                 $('#wait-count').text(response.count);
 
@@ -276,16 +267,15 @@
                 }
                 lastAntrianCount = response.count;
 
-                // 1. Update HTML Tabel Menunggu
+                // Update Tabel Menunggu
                 let htmlMenunggu = '';
                 if (response.antrian.length > 0) {
                     response.antrian.forEach(function(a) {
                         let namaLayanan = a.layanan ? a.layanan.nama_layanan : '---';
-                        let nikDisplay = a.nik ? a.nik : '-';
                         htmlMenunggu += `
                             <tr>
                                 <td class="ps-4"><span class="fw-bold text-primary h5 mb-0">${a.nomor_antrian}</span></td>
-                                <td><code class="text-dark">${nikDisplay}</code></td>
+                                <td><code class="text-dark">${a.nik ?? '-'}</code></td>
                                 <td class="fw-bold">${a.nama_pendaftar}</td>
                                 <td><span class="badge bg-info text-dark">${namaLayanan}</span></td>
                                 <td class="text-center small text-muted">Baru saja</td>
@@ -296,23 +286,22 @@
                 }
                 $('#tbody-menunggu').html(htmlMenunggu);
 
-                // 2. Update HTML Tabel Dilewati
+                // Update Tabel Dilewati
                 let htmlSkipped = '';
                 if (response.skipped.length > 0) {
                     response.skipped.forEach(function(s) {
                         let recallUrl = "{{ route('petugas.panggilUlang', ':id') }}".replace(':id', s.id);
-                        let nikS = s.nik ? s.nik : 'Tanpa NIK';
                         htmlSkipped += `
                             <tr>
                                 <td class="ps-4"><span class="fw-bold text-danger">${s.nomor_antrian}</span></td>
                                 <td>
                                     <div class="fw-bold">${s.nama_pendaftar}</div>
-                                    <small class="text-muted">${nikS}</small>
+                                    <small class="text-muted">${s.nik ?? 'Tanpa NIK'}</small>
                                 </td>
                                 <td class="text-end pe-4">
-                                    <form action="${recallUrl}" method="POST" class="d-inline">
+                                    <form action="${recallUrl}" method="POST" class="d-inline recall-form">
                                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn-sm btn-warning fw-bold px-3 shadow-sm rounded-pill">
+                                        <button type="submit" class="btn btn-sm btn-warning fw-bold px-3 shadow-sm rounded-pill recall-btn">
                                             RECALL <i class="fas fa-redo ms-1"></i>
                                         </button>
                                     </form>
@@ -323,25 +312,6 @@
                     htmlSkipped = '<tr><td colspan="3" class="text-center py-4 text-muted small">Tidak ada nomor dilewati.</td></tr>';
                 }
                 $('#tbody-skipped').html(htmlSkipped);
-
-                // 3. Update HTML Tabel Selesai (Jika data dikirim dari Controller)
-                if(response.selesai) {
-                    let htmlSelesai = '';
-                    if (response.selesai.length > 0) {
-                        response.selesai.forEach(function(sl) {
-                            htmlSelesai += `
-                                <tr>
-                                    <td class="ps-4"><span class="fw-bold text-success">${sl.nomor_antrian}</span></td>
-                                    <td class="fw-bold">${sl.nama_pendaftar}</td>
-                                    <td><span class="badge bg-soft-success text-success">Selesai</span></td>
-                                    <td class="text-center small text-muted">Baru saja</td>
-                                </tr>`;
-                        });
-                    } else {
-                        htmlSelesai = '<tr><td colspan="4" class="text-center py-4 text-muted small">Belum ada antrian selesai.</td></tr>';
-                    }
-                    $('#tbody-selesai').html(htmlSelesai);
-                }
             }
         });
     }
@@ -357,7 +327,9 @@
     .bg-soft-success { background-color: rgba(25, 135, 84, 0.1); }
     .rounded-4 { border-radius: 1.5rem !important; }
     .table thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
-    .btn-lg { border-radius: 12px; }
+    .btn-lg { border-radius: 12px; transition: all 0.3s; }
+    .btn-lg:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
     code { font-family: 'Courier New', Courier, monospace; color: #e83e8c; }
+    .action-btn.disabled { opacity: 0.6; pointer-events: none; }
 </style>
 @endsection

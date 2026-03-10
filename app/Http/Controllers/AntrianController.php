@@ -166,7 +166,6 @@ class AntrianController extends Controller
         ];
 
         // PENTING: Jika petugas pengambilan, JANGAN timpa user_id agar nomor tetap di loket asal.
-        // Jika petugas unit (loket 1-7), baru set user_id untuk mengunci kepemilikan.
         if (!$isPengambilanPetugas) {
             $updateData['user_id'] = $user->id;
         }
@@ -211,14 +210,33 @@ class AntrianController extends Controller
     }
 
     /**
-     * Panggil Ulang (Recall)
+     * Panggil Ulang (Recall) dengan Validasi Antrian Aktif
      */
     public function panggilUlang($id) {
         $user = auth()->user();
         $now = Carbon::now('Asia/Jakarta');
-        $q = Queue::findOrFail($id);
-
+        $today = $now->toDateString();
+        
         $isPengambilanPetugas = is_null($user->layanan_id);
+
+        // --- VALIDASI: Cek apakah petugas masih memiliki antrian yang sedang aktif dipanggil ---
+        $activeQueue = Queue::whereDate('created_at', $today)
+            ->where(function($query) use ($user, $isPengambilanPetugas) {
+                if ($isPengambilanPetugas) {
+                    $query->where('loket_id', $user->loket_id)
+                          ->where('status', 'pengambilan_dokumen');
+                } else {
+                    $query->where('user_id', $user->id)
+                          ->where('status', 'dipanggil');
+                }
+            })->first();
+
+        // Jika ada antrian aktif, cegah panggil ulang (recall) nomor lain di tabel riwayat/lewat
+        if ($activeQueue) {
+            return back()->with('error', 'Selesaikan pelayanan nomor ' . $activeQueue->nomor_antrian . ' terlebih dahulu sebelum memanggil nomor lain.');
+        }
+
+        $q = Queue::findOrFail($id);
         $status = $isPengambilanPetugas ? 'pengambilan_dokumen' : 'dipanggil';
 
         $updateData = [
@@ -227,7 +245,6 @@ class AntrianController extends Controller
             'updated_at' => $now 
         ];
 
-        // Sama seperti fungsi panggil: Petugas pengambilan jangan mencuri kepemilikan user_id
         if (!$isPengambilanPetugas) {
             $updateData['user_id'] = $user->id;
         }
