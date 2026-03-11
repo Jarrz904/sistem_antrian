@@ -16,7 +16,7 @@
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
             <form id="filterForm" action="{{ route('admin.antrian') }}" method="GET" class="row g-3">
-                {{-- Filter Prefix --}}
+                 {{-- Filter Prefix --}}
                 <div class="col-md-2">
                     <label class="form-label small fw-bold text-muted text-uppercase">Prefix</label>
                     <select name="prefix" class="form-select border-0 bg-light" onchange="this.form.submit()">
@@ -28,6 +28,7 @@
                         @endforeach
                     </select>
                 </div>
+
 
                 {{-- Filter Layanan --}}
                 <div class="col-md-2">
@@ -47,11 +48,11 @@
                     <select name="status" class="form-select border-0 bg-light" onchange="this.form.submit()">
                         <option value="">Semua Status</option>
                         <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
-                        <option value="dipanggil" {{ request('status') == 'dipanggil' ? 'selected' : '' }}>Dipanggil</option>
-                        <option value="diproses" {{ request('status') == 'diproses' ? 'selected' : '' }}>Diproses (Ke Loket Pengambilan)</option>
-                        <option value="pengambilan_dokumen" {{ request('status') == 'pengambilan_dokumen' ? 'selected' : '' }}>Sedang Di Loket Pengambilan</option>
-                        <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai (Arsip)</option>
                         <option value="lewat" {{ request('status') == 'lewat' ? 'selected' : '' }}>Dilewati</option>
+                        <option value="dipanggil" {{ request('status') == 'dipanggil' ? 'selected' : '' }}>Dipanggil</option>
+                        <option value="diproses" {{ request('status') == 'diproses' ? 'selected' : '' }}>Selesai Diproses</option>
+                        <option value="pengambilan_dokumen" {{ request('status') == 'pengambilan_dokumen' ? 'selected' : '' }}>Pengambilan Dokumen</option>
+                        <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
                     </select>
                 </div>
 
@@ -109,23 +110,23 @@
                                 <td><span class="badge bg-light text-dark border">{{ $q->layanan->nama_layanan ?? '-' }}</span></td>
                                 <td>
                                     @if($q->status == 'menunggu')
-                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Menunggu</span>
+                                        <span class="badge bg-secondary-subtle text-secondary border">Menunggu</span>
+                                    @elseif($q->status == 'lewat')
+                                        <span class="badge bg-danger-subtle text-danger border">Dilewati</span>
                                     @elseif($q->status == 'dipanggil')
-                                        <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                        <span class="badge bg-info-subtle text-info border">
                                             <i class="fas fa-volume-up me-1"></i> Dipanggil
                                         </span>
                                     @elseif($q->status == 'diproses')
                                         <span class="badge bg-primary text-white border shadow-sm">
-                                            <i class="fas fa-spinner fa-spin me-1"></i> Diproses (Ke Pengambilan)
+                                            <i class="fas fa-sync-alt me-1"></i> Selesai Diproses
                                         </span>
                                     @elseif($q->status == 'pengambilan_dokumen')
                                         <span class="badge bg-warning text-dark border border-warning shadow-sm">
-                                            <i class="fas fa-file-signature me-1"></i> Di Loket Pengambilan
+                                            <i class="fas fa-file-signature me-1"></i> Pengambilan Dokumen
                                         </span>
                                     @elseif($q->status == 'selesai')
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Selesai (Arsip)</span>
-                                    @elseif($q->status == 'lewat')
-                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Dilewati</span>
+                                        <span class="badge bg-success text-white border">Selesai</span>
                                     @else
                                         <span class="badge bg-light text-dark border">{{ $q->status }}</span>
                                     @endif
@@ -160,7 +161,7 @@
                                 </td>
                             </tr>
 
-                            {{-- Modal Edit (Tetap Sama) --}}
+                            {{-- Modal Edit --}}
                             <div class="modal fade" id="modalEdit{{ $q->id }}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content border-0 shadow">
@@ -184,11 +185,11 @@
                                                     <label class="form-label small fw-bold text-uppercase text-primary">Status Antrian</label>
                                                     <select name="status" class="form-select border-primary">
                                                         <option value="menunggu" {{ $q->status == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
-                                                        <option value="dipanggil" {{ $q->status == 'dipanggil' ? 'selected' : '' }}>Dipanggil</option>
-                                                        <option value="diproses" {{ $q->status == 'diproses' ? 'selected' : '' }}>Diproses (Menuju Loket Pengambilan)</option>
-                                                        <option value="pengambilan_dokumen" {{ $q->status == 'pengambilan_dokumen' ? 'selected' : '' }}>Sedang di Loket Pengambilan</option>
-                                                        <option value="selesai" {{ $q->status == 'selesai' ? 'selected' : '' }}>Selesai (Arsip)</option>
                                                         <option value="lewat" {{ $q->status == 'lewat' ? 'selected' : '' }}>Dilewati</option>
+                                                        <option value="dipanggil" {{ $q->status == 'dipanggil' ? 'selected' : '' }}>Dipanggil</option>
+                                                        <option value="diproses" {{ $q->status == 'diproses' ? 'selected' : '' }}>Selesai Diproses</option>
+                                                        <option value="pengambilan_dokumen" {{ $q->status == 'pengambilan_dokumen' ? 'selected' : '' }}>Pengambilan Dokumen</option>
+                                                        <option value="selesai" {{ $q->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
                                                     </select>
                                                 </div>
                                                 <div class="mb-3">
@@ -228,7 +229,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         function refreshTable() {
-            // Jangan refresh jika modal sedang terbuka agar input user tidak hilang
+            // Jangan refresh jika ada modal yang sedang terbuka agar input user tidak hilang
             if ($('.modal.show').length > 0) return;
 
             let currentUrl = window.location.href;
@@ -248,7 +249,7 @@
         }
 
         $(document).ready(function() {
-            // Refresh otomatis setiap 5 detik untuk memantau pendaftar baru
+            // Refresh data setiap 5 detik
             setInterval(refreshTable, 5000);
         });
     </script>

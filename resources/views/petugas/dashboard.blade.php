@@ -35,7 +35,7 @@
                             </div>
 
                             <div class="d-grid gap-3">
-                                {{-- POSISI 1: TOMBOL PANGGIL BERIKUTNYA (SELALU DI ATAS) --}}
+                                {{-- POSISI 1: TOMBOL PANGGIL BERIKUTNYA --}}
                                 <form action="{{ route('petugas.panggil') }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-lg py-3 border-0 action-btn" style="background: linear-gradient(45deg, #0d6efd, #0043a8);">
@@ -51,35 +51,39 @@
                                     </button>
                                 </form>
 
-                                {{-- POSISI 3: TOMBOL SELESAI (DINAMIS BERDASARKAN LAYANAN) --}}
+                                {{-- POSISI 3: TOMBOL SELESAI (SINKRONISASI STATUS BARU) --}}
                                 @php
                                     $isLoketPengambilan = is_null(auth()->user()->layanan_id);
                                     $isRekamKTP = str_contains(strtolower(auth()->user()->layanan?->nama_layanan ?? ''), 'rekam');
                                 @endphp
 
                                 @if($isRekamKTP)
+                                    {{-- Rekam KTP langsung ke status 'selesai' (arsip) --}}
                                     <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0 action-btn">
-                                            <i class="fas fa-check-circle me-2"></i> SELESAI & TUTUP ANTRIAN
+                                            <i class="fas fa-check-circle me-2"></i> SELESAI
                                         </button>
                                     </form>
                                     <small class="text-muted d-block mt-n2">* Layanan Rekam KTP langsung diarsipkan.</small>
 
                                 @elseif($isLoketPengambilan)
+                                    {{-- Loket Pengambilan langsung ke status 'selesai' --}}
                                     <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0 action-btn">
-                                            <i class="fas fa-check-double me-2"></i> SELESAI & ARSIP
+                                            <i class="fas fa-check-double me-2"></i> SELESAI PENGAMBILAN
                                         </button>
                                     </form>
                                 @else
-                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
+                                    {{-- Unit Layanan Umum (Loket 1-7) menggunakan status 'selesai diproses' agar sinkron dengan monitor --}}
+                                    <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai diproses']) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold py-3 shadow-sm border-0 text-white action-btn">
                                             <i class="fas fa-arrow-right me-2"></i> SELESAI PELAYANAN
                                         </button>
                                     </form>
+                                    <small class="text-muted d-block mt-n2">* Nomor akan tetap tampil di monitor dengan status Selesai.</small>
                                 @endif
                             </div>
 
@@ -114,7 +118,6 @@
 
         {{-- DAFTAR ANTRIAN --}}
         <div class="col-md-8">
-            {{-- TABEL DAFTAR TUNGGU --}}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-bold text-primary">
@@ -221,7 +224,13 @@
                                 <tr>
                                     <td class="ps-4"><span class="fw-bold text-success">{{ $sl->nomor_antrian }}</span></td>
                                     <td class="fw-bold">{{ $sl->nama_pendaftar }}</td>
-                                    <td><span class="badge bg-soft-success text-success">Selesai</span></td>
+                                    <td>
+                                        @if($sl->status == 'selesai diproses')
+                                            <span class="badge bg-soft-warning text-warning">Selesai Pelayanan</span>
+                                        @else
+                                            <span class="badge bg-soft-success text-success">Arsip Selesai</span>
+                                        @endif
+                                    </td>
                                     <td class="text-center small text-muted">{{ $sl->updated_at->format('H:i') }}</td>
                                 </tr>
                                 @empty
@@ -243,13 +252,11 @@
     let lastAntrianCount = {{ $antrian->count() }};
     let isCurrentEmpty = {{ $current ? 'false' : 'true' }};
 
-    // FUNGSI LOCK: Mencegah double click dan tumpang tindih panggil
+    // FUNGSI LOCK: Mencegah double click
     $(document).on('submit', 'form', function() {
         const $btn = $(this).find('button[type="submit"]');
         $btn.prop('disabled', true);
         $btn.html('<span class="spinner-border spinner-border-sm me-2"></span> PROSES...');
-        
-        // Disable semua tombol aksi lainnya agar tidak bentrok
         $('.action-btn, .recall-btn').addClass('disabled').prop('disabled', true);
     });
 
@@ -262,6 +269,7 @@
                 $('#count-menunggu').text(response.count + ' Orang');
                 $('#wait-count').text(response.count);
 
+                // Reload jika ada antrian baru masuk saat kondisi kosong
                 if (isCurrentEmpty && response.count > 0 && lastAntrianCount === 0) {
                     location.reload(); 
                 }
@@ -325,6 +333,7 @@
     .fw-800 { font-weight: 800; }
     .bg-soft-primary { background-color: rgba(13, 110, 253, 0.1); }
     .bg-soft-success { background-color: rgba(25, 135, 84, 0.1); }
+    .bg-soft-warning { background-color: rgba(255, 193, 7, 0.1); }
     .rounded-4 { border-radius: 1.5rem !important; }
     .table thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .btn-lg { border-radius: 12px; transition: all 0.3s; }

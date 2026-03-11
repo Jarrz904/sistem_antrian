@@ -35,25 +35,22 @@ class DisplayController extends Controller
                 /**
                  * --- LOKET UNIT LAYANAN (Loket 1-7) ---
                  * Logika: Cari nomor terakhir yang ditangani oleh petugas ini.
-                 * Kita kunci menggunakan 'user_id' agar meskipun loket_id di tabel antrian 
-                 * sudah berubah ke loket pengambilan, Unit Layanan tetap menampilkan nomor ini.
+                 * Status 'selesai diproses' ditambahkan agar nomor tidak hilang saat selesai diproses.
                  */
                 $lastQueue = $query->where(function($q) use ($petugas) {
-                        // Kondisi A: Antrian yang saat ini ada di loketnya
                         $q->where('loket_id', $petugas->loket_id)
-                          // Kondisi B: Antrian yang dulu dia panggil tapi sekarang sudah di tahap pengambilan
                           ->orWhere('user_id', $petugas->id);
                     })
-                    ->whereIn('status', ['dipanggil', 'diproses', 'pengambilan_dokumen', 'selesai', 'lewat'])
-                    // Urutan prioritas: yang sedang dipanggil tampil paling atas/utama
-                    ->orderByRaw("FIELD(status, 'dipanggil', 'diproses', 'pengambilan_dokumen', 'selesai', 'lewat') ASC")
+                    // PERBAIKAN: Ganti 'diproses' menjadi 'selesai diproses'
+                    ->whereIn('status', ['dipanggil', 'selesai diproses', 'pengambilan_dokumen', 'selesai', 'lewat'])
+                    // Urutan prioritas tampilan
+                    ->orderByRaw("FIELD(status, 'dipanggil', 'selesai diproses', 'pengambilan_dokumen', 'selesai', 'lewat') ASC")
                     ->orderBy('updated_at', 'desc')
                     ->first();
 
             } else {
                 /**
                  * --- LOKET PENGAMBILAN DOKUMEN ---
-                 * Logika: Hanya menampilkan antrian yang memang sedang berada di tahap pengambilan.
                  */
                 $lastQueue = (clone $query)
                     ->where('loket_id', $petugas->loket_id)
@@ -74,7 +71,9 @@ class DisplayController extends Controller
                     // Jika di unit layanan tapi status sudah di tahap pengambilan atau selesai
                     if ($lastQueue->status == 'pengambilan_dokumen') {
                         $labelLayanan = $lastQueue->layanan->nama_layanan . ' (Menuju Pengambilan)';
-                    } elseif (in_array($lastQueue->status, ['diproses', 'selesai'])) {
+                    } 
+                    // PERBAIKAN: Gunakan status 'selesai diproses' untuk label visual
+                    elseif (in_array($lastQueue->status, ['selesai diproses', 'selesai'])) {
                         $labelLayanan = $lastQueue->layanan->nama_layanan . ' (Selesai)';
                     }
                 } else {
@@ -86,11 +85,9 @@ class DisplayController extends Controller
             // --- Trigger Suara Panggilan (Voice) ---
             $statusUntukSuara = 'standby';
             if ($lastQueue) {
-                // Unit Layanan bersuara jika status 'dipanggil'
                 if ($petugas->layanan_id && $lastQueue->status == 'dipanggil') {
                     $statusUntukSuara = 'dipanggil';
                 } 
-                // Loket Pengambilan bersuara jika status 'pengambilan_dokumen'
                 elseif (!$petugas->layanan_id && $lastQueue->status == 'pengambilan_dokumen') {
                     $statusUntukSuara = 'dipanggil';
                 }
@@ -106,8 +103,7 @@ class DisplayController extends Controller
                 'layanan' => [
                     'nama_layanan' => $labelLayanan
                 ],
-                'status'        => $statusUntukSuara,
-                // Gunakan format microsecond agar JS Monitor mendeteksi perubahan sekecil apapun
+                'status'         => $statusUntukSuara,
                 'updated_token' => $lastQueue ? $lastQueue->updated_at->format('Y-m-d H:i:s.u') : null,
             ];
         }

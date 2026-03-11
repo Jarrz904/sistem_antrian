@@ -15,10 +15,10 @@ return new class extends Migration {
             $table->string('nomor_antrian'); 
             $table->string('nama_pendaftar');
             
-            /** * NIK WAJIB: Sesuai permintaan terbaru agar NIK wajib diisi 16 digit.
-             * Nullable dihapus agar validasi database sinkron dengan controller.
+            /** * PERBAIKAN: NIK dibuat nullable karena tidak digunakan.
+             * Panjang 16 digit tetap dipertahankan sebagai cadangan struktur.
              */
-            $table->string('nik', 16);
+            $table->string('nik', 16)->nullable();
             
             $table->foreignId('layanan_id')->constrained()->onDelete('cascade');
             $table->foreignId('loket_id')->nullable()->constrained()->onDelete('set null');

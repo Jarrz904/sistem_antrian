@@ -38,7 +38,7 @@
             </div>
         </div>
 
-        {{-- Dipanggil (Proses Awal) --}}
+        {{-- Dipanggil --}}
         <div class="col-xl-2 col-md-4 col-sm-6">
             <div class="card bg-info text-white border-0 shadow-sm h-100">
                 <div class="card-body p-3">
@@ -53,14 +53,15 @@
             </div>
         </div>
 
-        {{-- Sedang Diproses --}}
+        {{-- Selesai di Proses --}}
         <div class="col-xl-2 col-md-4 col-sm-6">
             <div class="card bg-dark text-white border-0 shadow-sm h-100">
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-uppercase small fw-bold opacity-75">Diproses</h6>
-                            <h2 class="fw-bold mb-0" id="diproses-count">{{ $diproses ?? 0 }}</h2>
+                            <h6 class="text-uppercase small fw-bold opacity-75">Selesai Diproses</h6>
+                            {{-- Menggunakan variabel selesaidiproses tanpa typo --}}
+                            <h2 class="fw-bold mb-0" id="diproses-count">{{ $selesaidiproses ?? 0 }}</h2>
                         </div>
                         <i class="fas fa-spinner fa-2x opacity-25 fa-spin-slow"></i>
                     </div>
@@ -121,19 +122,25 @@
         <div class="card-body text-center py-5">
             <h5 class="fw-bold mb-4 text-dark">Pusat Manajemen Sistem</h5>
             <div class="d-flex justify-content-center gap-3 flex-wrap">
-                <a href="{{ route('admin.layanan') }}" class="btn btn-outline-success px-4 py-2 fw-bold rounded-pill shadow-sm">
+                <a href="{{ route('admin.layanan') }}"
+                    class="btn btn-outline-success px-4 py-2 fw-bold rounded-pill shadow-sm">
                     <i class="fas fa-concierge-bell me-2"></i> Kelola Layanan
                 </a>
-                <a href="{{ route('admin.petugas') }}" class="btn btn-outline-primary px-4 py-2 fw-bold rounded-pill shadow-sm">
+                <a href="{{ route('admin.petugas') }}"
+                    class="btn btn-outline-primary px-4 py-2 fw-bold rounded-pill shadow-sm">
                     <i class="fas fa-user-cog me-2"></i> Kelola Petugas
                 </a>
-                <a href="{{ route('admin.antrian') }}" class="btn btn-outline-info px-4 py-2 fw-bold rounded-pill shadow-sm">
+                <a href="{{ route('admin.antrian') }}"
+                    class="btn btn-outline-info px-4 py-2 fw-bold rounded-pill shadow-sm">
                     <i class="fas fa-users-viewfinder me-2"></i> Kelola Antrian
                 </a>
-                <a href="{{ route('display') }}" target="_blank" class="btn btn-outline-dark px-4 py-2 fw-bold rounded-pill shadow-sm">
+                <a href="{{ route('display') }}" target="_blank"
+                    class="btn btn-outline-dark px-4 py-2 fw-bold rounded-pill shadow-sm">
                     <i class="fas fa-external-link-alt me-2"></i> Cek Display
                 </a>
-                <a href="{{ route('admin.reset-display') }}" onclick="return confirm('PERHATIAN: Ini akan menghapus seluruh data antrian hari ini. Lanjutkan?')" class="btn btn-outline-danger px-4 py-2 fw-bold rounded-pill shadow-sm">
+                <a href="{{ route('admin.reset-display') }}"
+                    onclick="return confirm('PERHATIAN: Ini akan menghapus seluruh data antrian hari ini. Lanjutkan?')"
+                    class="btn btn-outline-danger px-4 py-2 fw-bold rounded-pill shadow-sm">
                     <i class="fas fa-rotate me-2"></i> Reset Sistem
                 </a>
             </div>
@@ -143,7 +150,8 @@
     {{-- Tabel Monitoring Realtime --}}
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3">
-            <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-list-ol me-2 text-primary"></i> Monitoring Antrian Hari Ini</h5>
+            <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-list-ol me-2 text-primary"></i> Monitoring Antrian Hari Ini
+            </h5>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -159,52 +167,59 @@
                 </thead>
                 <tbody id="antrian-table-body">
                     @forelse($dataAntrian as $item)
-                    <tr>
-                        <td class="ps-4 fw-bold text-primary">{{ $item->nomor_antrian }}</td>
-                        <td>{{ $item->nama_pendaftar }}</td>
-                        <td><span class="badge bg-light text-dark border">{{ $item->layanan->nama_layanan ?? '-' }}</span></td>
-                        <td>
-                            @php
-                                $statusLabel = $item->status;
-                                $badgeClass = 'bg-secondary';
-                                
-                                if($item->status == 'menunggu') $badgeClass = 'bg-secondary';
-                                elseif($item->status == 'dipanggil') $badgeClass = 'bg-info text-white animate-pulse';
-                                elseif($item->status == 'diproses') $badgeClass = 'bg-primary';
-                                elseif($item->status == 'pengambilan_dokumen') {
-                                    $badgeClass = 'bg-warning text-dark border border-warning shadow-sm';
-                                    $statusLabel = 'Pengambilan Dokumen';
-                                }
-                                elseif($item->status == 'selesai') $badgeClass = 'bg-success';
-                                elseif($item->status == 'lewat') $badgeClass = 'bg-danger';
-                            @endphp
+                        <tr>
+                            <td class="ps-4 fw-bold text-primary">{{ $item->nomor_antrian }}</td>
+                            <td>{{ $item->nama_pendaftar }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ $item->layanan->nama_layanan ?? '-' }}</span>
+                            </td>
+                            <td>
+                                @php
+                                    $status = $item->status;
+                                    $badgeClass = 'bg-secondary';
+                                    $displayLabel = ucfirst(str_replace('_', ' ', $status));
 
-                            <span class="badge {{ $badgeClass }}">
-                                @if($item->status == 'dipanggil') <i class="fas fa-volume-up me-1"></i> @endif
-                                @if($item->status == 'pengambilan_dokumen') <i class="fas fa-file-signature me-1"></i> @endif
-                                {{ ucfirst(str_replace('_', ' ', $statusLabel)) }}
-                            </span>
-                        </td>
-                        <td>
-                            @if($item->user_id)
-                                <div class="small fw-bold text-dark">
-                                    <i class="fas fa-desktop me-1 text-muted"></i> {{ $item->loket->nama_loket ?? 'Loket' }}
-                                </div>
-                                <div class="small text-muted">
-                                    <i class="fas fa-user-tie me-1"></i> {{ $item->petugas->name ?? '-' }}
-                                </div>
-                            @else
-                                <span class="text-muted small italic">Belum dipanggil loket</span>
-                            @endif
-                        </td>
-                        <td class="text-end pe-4 small text-muted">
-                            {{ $item->created_at->timezone('Asia/Jakarta')->format('H:i') }}
-                        </td>
-                    </tr>
+                                    if ($status == 'menunggu')
+                                        $badgeClass = 'bg-secondary';
+                                    elseif ($status == 'dipanggil')
+                                        $badgeClass = 'bg-info text-white animate-pulse';
+                                    elseif ($status == 'selesai diproses') {
+                                        $badgeClass = 'bg-primary';
+                                        $displayLabel = 'Selesai Diproses';
+                                    } elseif ($status == 'pengambilan_dokumen') {
+                                        $badgeClass = 'bg-warning text-dark border border-warning shadow-sm';
+                                        $displayLabel = 'Pengambilan Dokumen';
+                                    } elseif ($status == 'selesai')
+                                        $badgeClass = 'bg-success';
+                                    elseif ($status == 'lewat')
+                                        $badgeClass = 'bg-danger';
+                                @endphp
+
+                                <span class="badge {{ $badgeClass }}">
+                                    @if($status == 'dipanggil') <i class="fas fa-volume-up me-1"></i> @endif
+                                    @if($status == 'pengambilan_dokumen') <i class="fas fa-file-signature me-1"></i> @endif
+                                    {{ $displayLabel }}
+                                </span>
+                            </td>
+                            <td>
+                                @if($item->user_id)
+                                    <div class="small fw-bold text-dark">
+                                        <i class="fas fa-desktop me-1 text-muted"></i> {{ $item->loket->nama_loket ?? 'Loket' }}
+                                    </div>
+                                    <div class="small text-muted">
+                                        <i class="fas fa-user-tie me-1"></i> {{ $item->petugas->name ?? '-' }}
+                                    </div>
+                                @else
+                                    <span class="text-muted small italic">Belum dipanggil loket</span>
+                                @endif
+                            </td>
+                            <td class="text-end pe-4 small text-muted">
+                                {{ $item->created_at->timezone('Asia/Jakarta')->format('H:i') }}
+                            </td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">Belum ada antrian hari ini.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">Belum ada antrian hari ini.</td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
@@ -213,54 +228,59 @@
 
     {{-- Script Realtime Update --}}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             function fetchRealtimeStats() {
                 fetch("{{ route('admin.realtime-stats') }}")
-                    .then(response => {
-                        if (!response.ok) throw new Error('Network response was not ok');
-                        return response.json();
-                    })
+                    .then(response => response.json())
                     .then(data => {
-                        // Mapping ID element ke Key JSON dari Controller
                         const mappings = {
                             'total-antrian-count': data.totalAntrian,
                             'menunggu-count': data.menunggu,
                             'dipanggil-count': data.dipanggil,
-                            'diproses-count': data.diproses,
-                            'pengambilan-count': data.pengambilanDokumen || data.pengambilan_dokumen,
+                            // Samakan dengan key dari Controller: selesaidiproses
+                            'diproses-count': data.selesaidiproses,
+                            'pengambilan-count': data.pengambilanDokumen,
                             'selesai-count': data.selesai,
                             'lewat-count': data.lewat
                         };
 
                         for (const [id, value] of Object.entries(mappings)) {
                             const el = document.getElementById(id);
-                            if (el) {
-                                el.innerText = value !== undefined && value !== null ? value : 0;
-                            }
+                            if (el) el.innerText = value !== undefined && value !== null ? value : 0;
                         }
                     })
                     .catch(error => console.error('Error fetching stats:', error));
             }
 
-            // Panggil langsung saat halaman dimuat pertama kali
-            fetchRealtimeStats();
-
-            // Jalankan fetch rutin setiap 3 detik
             setInterval(fetchRealtimeStats, 3000);
         });
     </script>
 
     <style>
-        .fa-spin-slow { animation: fa-spin 3s infinite linear; }
-        .badge { font-weight: 600; padding: 0.5em 0.8em; border-radius: 6px; }
-        .card { transition: all 0.3s ease; }
-        .card:hover { transform: translateY(-4px); }
-        
+        .fa-spin-slow {
+            animation: fa-spin 3s infinite linear;
+        }
+
+        .badge {
+            font-weight: 600;
+            padding: 0.5em 0.8em;
+            border-radius: 6px;
+        }
+
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
         @keyframes pulse-opacity {
             0% { opacity: 1; }
             50% { opacity: 0.6; }
             100% { opacity: 1; }
         }
+
         .animate-pulse {
             animation: pulse-opacity 1.5s infinite ease-in-out;
         }

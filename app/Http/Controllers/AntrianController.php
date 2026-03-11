@@ -23,8 +23,8 @@ class AntrianController extends Controller
         // 1. DAFTAR TUNGGU
         $antrian = Queue::whereDate('created_at', $today)
             ->when($isPengambilanPetugas, function($q) {
-                // Loket Pengambilan menunggu antrian yang berstatus 'diproses'
-                return $q->where('status', 'diproses');
+                // PERBAIKAN: Loket Pengambilan menunggu antrian yang dikirim unit (status: 'selesai diproses')
+                return $q->where('status', 'selesai diproses');
             }, function($q) use ($user) {
                 // Loket Unit menunggu antrian sesuai layanan masing-masing ('menunggu')
                 return $q->where('status', 'menunggu')->where('layanan_id', $user->layanan_id);
@@ -50,8 +50,8 @@ class AntrianController extends Controller
                 // Riwayat pengambilan di loket ini
                 return $q->where('status', 'selesai')->where('loket_id', $user->loket_id);
             }, function($q) use ($user) {
-                // Menampilkan riwayat yang dikerjakan oleh petugas ini (user_id tetap terkunci)
-                return $q->whereIn('status', ['selesai', 'diproses', 'pengambilan_dokumen'])
+                // PERBAIKAN: Menampilkan status 'selesai diproses' agar muncul di tabel riwayat petugas unit
+                return $q->whereIn('status', ['selesai', 'diproses', 'selesai diproses', 'pengambilan_dokumen'])
                          ->where('user_id', $user->id);
             })
             ->orderBy('updated_at', 'desc')
@@ -91,17 +91,22 @@ class AntrianController extends Controller
      * Fungsi Internal untuk menentukan status akhir
      */
     private function determineFinalStatus($queue, $isPengambilanPetugas) {
+        // Jika diproses oleh petugas pengambilan, status akhirnya mutlak 'selesai'
         if ($isPengambilanPetugas) {
             return 'selesai';
         }
 
+        // Ambil nama layanan untuk pengecekan
         $namaLayanan = strtoupper($queue->layanan->nama_layanan ?? '');
 
+        // Daftar kata kunci layanan yang tidak membutuhkan pengambilan dokumen
         $langsungSelesai = [
             'REKAM KTP',
             'REKAM BIOMETRIK',
             'KONSULTASI',
-            'PENGADUAN'
+            'PENGADUAN',
+            'SINKRONISASI',
+            'UPDATE DATA'
         ];
 
         foreach ($langsungSelesai as $item) {
@@ -110,7 +115,8 @@ class AntrianController extends Controller
             }
         }
 
-        return 'diproses';
+        // Default: Unit Layanan melempar ke Loket Pengambilan
+        return 'selesai diproses';
     }
 
     /**
@@ -144,7 +150,8 @@ class AntrianController extends Controller
         // 2. Cari antrian berikutnya
         $qNext = Queue::whereDate('created_at', $today)
             ->when($isPengambilanPetugas, function($query) {
-                return $query->where('status', 'diproses');
+                // PERBAIKAN: Cari antrian yang sudah dikirim oleh unit (status: 'selesai diproses')
+                return $query->where('status', 'selesai diproses');
             }, function($query) use ($user) {
                 return $query->where('status', 'menunggu')->where('layanan_id', $user->layanan_id);
             })
@@ -165,7 +172,7 @@ class AntrianController extends Controller
             'updated_at' => $now 
         ];
 
-        // PENTING: Jika petugas pengambilan, JANGAN timpa user_id agar nomor tetap di loket asal.
+        // PENTING: Jika petugas pengambilan, JANGAN timpa user_id agar nomor tetap terkunci pada petugas unit asal.
         if (!$isPengambilanPetugas) {
             $updateData['user_id'] = $user->id;
         }
@@ -199,7 +206,6 @@ class AntrianController extends Controller
             'updated_at' => $now 
         ];
 
-        // Jika dilewati (lewat), perbarui user_id agar tercatat siapa yang memanggil terakhir
         if ($status == 'lewat') {
             $updateData['user_id'] = $user->id;
         }
@@ -219,7 +225,6 @@ class AntrianController extends Controller
         
         $isPengambilanPetugas = is_null($user->layanan_id);
 
-        // --- VALIDASI: Cek apakah petugas masih memiliki antrian yang sedang aktif dipanggil ---
         $activeQueue = Queue::whereDate('created_at', $today)
             ->where(function($query) use ($user, $isPengambilanPetugas) {
                 if ($isPengambilanPetugas) {
@@ -231,7 +236,6 @@ class AntrianController extends Controller
                 }
             })->first();
 
-        // Jika ada antrian aktif, cegah panggil ulang (recall) nomor lain di tabel riwayat/lewat
         if ($activeQueue) {
             return back()->with('error', 'Selesaikan pelayanan nomor ' . $activeQueue->nomor_antrian . ' terlebih dahulu sebelum memanggil nomor lain.');
         }

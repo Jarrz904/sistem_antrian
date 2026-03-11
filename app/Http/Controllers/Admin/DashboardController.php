@@ -10,14 +10,13 @@ use Illuminate\Support\Carbon;
 class DashboardController extends Controller
 {
     /**
-     * Menampilkan halaman utama Dashboard Admin (Ringkasan Statistik)
+     * Menampilkan halaman utama Dashboard Admin
      */
     public function index()
     {
         $data = $this->getStatsData();
         $layanans = Layanan::all();
 
-        // Menggabungkan data statistik dan data layanan ke view dashboard
         return view('admin.dashboard', array_merge($data, ['layanans' => $layanans]));
     }
 
@@ -26,48 +25,45 @@ class DashboardController extends Controller
      */
     public function getRealtimeStats()
     {
-        // Mengembalikan data statistik dalam format JSON untuk kebutuhan fetch JS
         return response()->json($this->getStatsData());
     }
 
     /**
-     * Logika internal untuk mengambil data statistik harian dengan 6 status sesuai alur baru
+     * Logika internal statistik harian
      */
     private function getStatsData()
     {
-        $now = Carbon::now('Asia/Jakarta');
-        $today = $now->toDateString();
+        $today = Carbon::now('Asia/Jakarta')->toDateString();
 
-        // Query dasar untuk efisiensi (menghindari pengetikan whereDate berulang kali)
+        // Query dasar untuk efisiensi
         $baseQuery = Queue::whereDate('created_at', $today);
 
-        // 1. Menunggu: Status menunggu dan belum ada petugas yang menangani
+        // 1. Menunggu
         $menungguCount = (clone $baseQuery)
             ->where('status', 'menunggu')
-            ->whereNull('user_id')
             ->count();
 
-        // 2. Dipanggil: Sedang dipanggil di loket pelayanan
+        // 2. Dipanggil
         $dipanggilCount = (clone $baseQuery)
             ->where('status', 'dipanggil')
             ->count();
 
-        // 3. Diproses: Dokumen sedang dikerjakan atau tahap akhir rekam KTP
+        // 3. Selesai di Proses (Diseragamkan menggunakan: 'selesai diproses')
         $diprosesCount = (clone $baseQuery)
-            ->where('status', 'diproses')
+            ->where('status', 'selesai diproses')
             ->count();
 
-        // 4. Pengambilan Dokumen: Sedang dipanggil di loket pengambilan
+        // 4. Pengambilan Dokumen
         $pengambilanCount = (clone $baseQuery)
             ->where('status', 'pengambilan_dokumen')
             ->count();
 
-        // 5. Lewat/Dilewati: Masyarakat tidak hadir saat dipanggil
+        // 5. Lewat/Dilewati
         $lewatCount = (clone $baseQuery)
             ->where('status', 'lewat')
             ->count();
 
-        // 6. Selesai: Dokumen sudah diterima atau proses selesai
+        // 6. Selesai
         $selesaiCount = (clone $baseQuery)
             ->where('status', 'selesai')
             ->count();
@@ -76,8 +72,8 @@ class DashboardController extends Controller
             'totalAntrian'       => (clone $baseQuery)->count(),
             'menunggu'           => $menungguCount,
             'dipanggil'          => $dipanggilCount,
-            'diproses'           => $diprosesCount,
-            'pengambilanDokumen' => $pengambilanCount, // Konsisten dengan camelCase di JS
+            'selesaidiproses'    => $diprosesCount, // Key tetap sama agar sinkron dengan JS/Blade
+            'pengambilanDokumen' => $pengambilanCount,
             'lewat'              => $lewatCount,
             'selesai'            => $selesaiCount,
             'dataAntrian'        => Queue::with(['layanan', 'loket', 'petugas'])
@@ -154,7 +150,7 @@ class DashboardController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | FITUR KELOLA DATA ANTRIAN (LOG & RIWAYAT)
+    | FITUR KELOLA DATA ANTRIAN
     |--------------------------------------------------------------------------
     */
 
@@ -177,15 +173,14 @@ class DashboardController extends Controller
     {
         $request->validate([
             'nama_pendaftar' => 'required|string|max:255',
-            'nik'            => 'required|numeric|digits:16',
             'layanan_id'     => 'required|exists:layanans,id',
-            'status'         => 'required|in:menunggu,dipanggil,lewat,diproses,pengambilan_dokumen,selesai'
+            // Menjamin status 'selesai diproses' valid untuk diinput manual oleh Admin
+            'status'         => 'required|in:menunggu,dipanggil,lewat,selesai diproses,pengambilan_dokumen,selesai'
         ]);
 
         $antrian = Queue::findOrFail($id);
         $antrian->update([
             'nama_pendaftar' => $request->nama_pendaftar,
-            'nik'            => $request->nik,
             'layanan_id'     => $request->layanan_id,
             'status'         => $request->status,
             'updated_at'     => Carbon::now('Asia/Jakarta')
@@ -245,10 +240,11 @@ class DashboardController extends Controller
                 $date = Carbon::parse($q->created_at)->timezone('Asia/Jakarta');
                 $isRekam = str_contains(strtolower($q->layanan->nama_layanan ?? ''), 'rekam');
 
+                // Mapping label status agar rapi di file CSV
                 $statusLabel = match($q->status) {
                     'selesai'             => 'Selesai',
                     'pengambilan_dokumen' => 'Menunggu Pengambilan',
-                    'diproses'            => $isRekam ? 'Selesai (Rekam KTP)' : 'Sedang Diproses',
+                    'selesai diproses'    => $isRekam ? 'Selesai (Rekam KTP)' : 'Selesai Pelayanan (Proses Dokumen)',
                     'dipanggil'           => 'Dipanggil',
                     'lewat'               => 'Dilewati',
                     default               => 'Menunggu',
@@ -257,7 +253,7 @@ class DashboardController extends Controller
                 fputcsv($file, [
                     $q->nomor_antrian,
                     $q->nama_pendaftar,
-                    $q->nik . "\t", 
+                    (!empty($q->nik) ? $q->nik . "\t" : '-'), 
                     $q->layanan->nama_layanan ?? '-',
                     $date->translatedFormat('d F Y'),
                     $date->format('H:i'),

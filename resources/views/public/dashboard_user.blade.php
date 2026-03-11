@@ -162,18 +162,17 @@
             font-size: 1rem;
         }
 
-        .modal-content {
-            border-radius: 35px;
-            border: none;
-        }
-
-        .form-control-custom {
-            border-radius: 18px;
-            padding: 18px;
-            background-color: #f8f9fa;
-            border: 3px solid #dee2e6;
-            font-size: 1.3rem;
-            font-weight: 800;
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: none !important;
+                box-shadow: none !important;
+            }
         }
 
         @media (max-width: 992px) {
@@ -209,7 +208,7 @@
                             {{ $l->deskripsi ?? 'Silahkan ambil nomor antrian untuk mendapatkan pelayanan.' }}
                         </div>
                         <button type="button" class="btn btn-primary btn-pilih"
-                            onclick="pilihLayanan('{{ $l->id }}', '{{ $l->nama_layanan }}')">
+                            onclick="ambilAntrianLangsung(this, '{{ $l->id }}')">
                             AMBIL NOMOR
                         </button>
                     </div>
@@ -218,41 +217,18 @@
         </main>
     </div>
 
-    {{-- MODAL INPUT DATA - HANYA NAMA --}}
-    <div class="modal fade" id="modalInputAntrian" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content shadow-lg">
-                <div class="modal-body p-5">
-                    <div class="text-center mb-4">
-                        <h1 class="fw-800 text-primary" id="titleLayanan" style="font-size: 2.2rem;">DETAIL ANTRIAN</h1>
-                        <p class="text-muted fw-bold fs-5">Lengkapi nama Anda untuk mengambil nomor</p>
-                    </div>
-
-                    <form action="{{ route('user.store') }}" method="POST" id="formAntrian">
-                        @csrf
-                        <input type="hidden" name="layanan_id" id="selected_layanan_id">
-
-                        <div class="mb-5">
-                            <label class="form-label fw-800 fs-4">Nama Lengkap</label>
-                            <input type="text" name="nama" class="form-control form-control-custom"
-                                placeholder="Masukkan nama Anda" required autocomplete="off">
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-800 shadow-lg"
-                            style="font-size: 1.8rem;">
-                            KONFIRMASI
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    {{-- Form Tersembunyi untuk Proses Auto-Submit --}}
+    <form action="{{ route('user.store') }}" method="POST" id="formAntrianOtomatis" style="display: none;">
+        @csrf
+        <input type="hidden" name="layanan_id" id="selected_layanan_id">
+        <input type="hidden" name="nama" value="Pemohon"> 
+    </form>
 
     {{-- MODAL SUKSES --}}
     @if(session('success_data'))
         <div class="modal fade" id="modalSukses" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content text-center p-5">
+                <div class="modal-content text-center p-5" style="border-radius: 35px;">
                     <div class="modal-body">
                         <div class="text-success mb-3"><i class="fas fa-check-circle fa-7x"></i></div>
                         <h1 class="fw-800 display-4">BERHASIL!</h1>
@@ -278,29 +254,45 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        let inputModalObj;
+        /**
+         * Perbaikan Bug: 
+         * 1. Menggunakan parameter 'btn' untuk memastikan referensi elemen tidak hilang (bug currentTarget).
+         * 2. Menambahkan pencegahan submit ganda.
+         */
+        function ambilAntrianLangsung(btn, layananId) {
+            const form = document.getElementById('formAntrianOtomatis');
+            const inputLayanan = document.getElementById('selected_layanan_id');
 
-        function pilihLayanan(id, nama) {
-            const form = document.getElementById('formAntrian');
-            form.reset();
+            // Validasi elemen
+            if (!form || !inputLayanan) return;
 
-            document.getElementById('selected_layanan_id').value = id;
-            document.getElementById('titleLayanan').innerText = nama.toUpperCase();
+            // Kunci tombol agar tidak bisa diklik lagi (mencegah bug nomor loncat/dobel)
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> MEMPROSES...';
+            btn.classList.replace('btn-primary', 'btn-secondary');
 
-            if (!inputModalObj) {
-                inputModalObj = new bootstrap.Modal(document.getElementById('modalInputAntrian'));
-            }
-            inputModalObj.show();
+            // Set data dan kirim
+            inputLayanan.value = layananId;
+            
+            // Gunakan timeout kecil untuk memastikan DOM terupdate sebelum submit
+            setTimeout(() => {
+                form.submit();
+            }, 100);
         }
 
         @if(session('success_data'))
             document.addEventListener('DOMContentLoaded', function () {
-                const modalSuksesObj = new bootstrap.Modal(document.getElementById('modalSukses'));
-                modalSuksesObj.show();
+                const modalElement = document.getElementById('modalSukses');
+                if (modalElement) {
+                    const modalSuksesObj = new bootstrap.Modal(modalElement);
+                    modalSuksesObj.show();
+                }
             });
         @endif
 
-        function printAntrian() { window.print(); }
+        function printAntrian() { 
+            window.print(); 
+        }
     </script>
 </body>
 </html>

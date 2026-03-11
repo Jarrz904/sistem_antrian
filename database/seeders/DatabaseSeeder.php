@@ -79,8 +79,8 @@ class DatabaseSeeder extends Seeder
         // 4. Seed Petugas Layanan (Terikat ke Layanan tertentu)
         User::create([
             'name' => 'Petugas 1',
-            'username' => 'petugas1',
-            'password' => bcrypt('password'),
+            'username' => 'loket1',
+            'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
             'layanan_id' => 1,
             'loket_id' => 1
@@ -88,8 +88,8 @@ class DatabaseSeeder extends Seeder
 
         User::create([
             'name' => 'Petugas 2',
-            'username' => 'petugas2',
-            'password' => bcrypt('password'),
+            'username' => 'loket2',
+            'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
             'layanan_id' => 2,
             'loket_id' => 2
@@ -97,8 +97,8 @@ class DatabaseSeeder extends Seeder
 
         User::create([
             'name' => 'Petugas 3',
-            'username' => 'petugas3',
-            'password' => bcrypt('password'),
+            'username' => 'loket3',
+            'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
             'layanan_id' => 3,
             'loket_id' => 3
@@ -106,8 +106,8 @@ class DatabaseSeeder extends Seeder
 
         User::create([
             'name' => 'Petugas 4',
-            'username' => 'petugas4',
-            'password' => bcrypt('password'),
+            'username' => 'loket4',
+            'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
             'layanan_id' => 3,
             'loket_id' => 4
@@ -115,8 +115,8 @@ class DatabaseSeeder extends Seeder
 
         User::create([
             'name' => 'Petugas 5',
-            'username' => 'petugas5',
-            'password' => bcrypt('password'),
+            'username' => 'loket5',
+            'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
             'layanan_id' => 3,
             'loket_id' => 5
@@ -124,8 +124,8 @@ class DatabaseSeeder extends Seeder
 
         User::create([
             'name' => 'Petugas 6',
-            'username' => 'petugas6',
-            'password' => bcrypt('password'),
+            'username' => 'loket6',
+            'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
             'layanan_id' => 4,
             'loket_id' => 6
@@ -133,8 +133,8 @@ class DatabaseSeeder extends Seeder
 
         User::create([
             'name' => 'Petugas 7',
-            'username' => 'petugas7',
-            'password' => bcrypt('password'),
+            'username' => 'loket7',
+            'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
             'layanan_id' => 5,
             'loket_id' => 7
@@ -145,7 +145,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Petugas Pengambilan',
             'username' => 'ambilberkas',
-            'password' => bcrypt('password'),
+            'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
             'layanan_id' => null, // Tidak terikat layanan mana pun
             'loket_id' => $loketPengambilan->id

@@ -142,10 +142,11 @@ class PetugasController extends Controller
                  */
                 $isRekam = str_contains(strtolower($row->layanan->nama_layanan ?? ''), 'rekam');
 
+                // PERBAIKAN: Status diseragamkan menjadi 'selesai diproses' (satu spasi)
                 $statusLabel = match($row->status) {
                     'selesai'             => $isRekam ? 'Selesai (Rekam KTP)' : 'Selesai (Arsip)',
                     'pengambilan_dokumen' => 'Menunggu Pengambilan',
-                    'diproses'            => 'Sedang Dilayani',
+                    'selesai diproses'    => 'Selesai Pelayanan (Proses Dokumen)',
                     'dipanggil'           => 'Baru Dipanggil',
                     'lewat'               => 'Dilewati/Tidak Hadir',
                     default               => 'Menunggu Antrian',
