@@ -33,17 +33,12 @@ class AntrianController extends Controller
             ->with('layanan')
             ->get();
 
-        // 2. DAFTAR DILEWATI (Update: Filter khusus agar pengambilan tidak mengotori riwayat umum)
+        // 2. DAFTAR DILEWATI (Hanya muncul per loket petugas yang login)
         $skipped = Queue::where(function($q) {
                 $q->where('status', 'dilewati')->orWhere('status', 'lewat');
             })
             ->whereDate('created_at', $today)
-            ->when($isPengambilanPetugas, function($q) use ($user) {
-                // Filter ketat: Hanya yang dilewati di loket pengambilan ini
-                return $q->where('loket_id', $user->loket_id)->where('status', 'dilewati');
-            }, function($q) use ($user) {
-                return $q->where('layanan_id', $user->layanan_id);
-            })
+            ->where('loket_id', $user->loket_id) // PERBAIKAN: Filter riwayat dilewati hanya untuk loket ini
             ->orderBy('updated_at', 'desc')
             ->get();
 
@@ -126,7 +121,7 @@ class AntrianController extends Controller
 
         $isPengambilanPetugas = is_null($user->layanan_id);
 
-        // 1. OTOMATISASI: Selesaikan antrian lama milik PETUGAS INI (berdasarkan user_id atau loket_id pengambilan)
+        // 1. OTOMATISASI: Selesaikan antrian lama yang sedang ditangani user/loket ini
         $oldQueue = Queue::whereDate('created_at', $today)
             ->where(function($q) use ($user, $isPengambilanPetugas) {
                 if ($isPengambilanPetugas) {
@@ -163,15 +158,11 @@ class AntrianController extends Controller
         
         $updateData = [
             'status'     => $newStatus, 
+            'loket_id'   => $user->loket_id, 
             'panggil_at' => $now,
             'updated_at' => $now 
         ];
 
-        // LOGIKA PERBAIKAN: 
-        // Jika petugas pengambilan, kita set loket_id agar muncul di monitor pengambilan, 
-        // tapi TIDAK menghapus user_id petugas unit sebelumnya agar riwayat proses awal tetap ada.
-        $updateData['loket_id'] = $user->loket_id;
-        
         if (!$isPengambilanPetugas) {
             $updateData['user_id'] = $user->id;
         }
@@ -195,7 +186,7 @@ class AntrianController extends Controller
 
         $q = Queue::with('layanan')->findOrFail($id);
         
-        $originalStatus = $status;
+        // Update: Jika status dari request adalah 'lewat', ubah menjadi 'dilewati'
         $finalStatus = ($status == 'lewat') ? 'dilewati' : $status;
 
         if ($status == 'selesai') {
@@ -204,24 +195,16 @@ class AntrianController extends Controller
 
         $updateData = [
             'status'     => $finalStatus,
+            'loket_id'   => $user->loket_id, // PERBAIKAN: Tetap catat loket_id saat dilewati
             'updated_at' => $now 
         ];
 
-        // Jika dilewati di loket unit, catat user_id. 
-        // Jika dilewati di loket pengambilan, pastikan tetap terkait loket_id tersebut.
+        // Jika dilewati, tetap catat siapa petugas yang mengeksekusinya
         if ($status == 'lewat' || $status == 'dilewati') {
-            if (!$isPengambilanPetugas) {
-                $updateData['user_id'] = $user->id;
-            }
-            $updateData['loket_id'] = $user->loket_id;
+            $updateData['user_id'] = $user->id;
         }
 
         $q->update($updateData);
-        
-        // LOGIKA KHUSUS DILEWATI: Otomatis panggil nomor selanjutnya
-        if ($originalStatus == 'lewat') {
-            return $this->panggil(request());
-        }
         
         return back()->with('success', 'Status antrian ' . $q->nomor_antrian . ' diperbarui.');
     }
@@ -248,7 +231,7 @@ class AntrianController extends Controller
             })->first();
 
         if ($activeQueue) {
-            return back()->with('error', 'Selesaikan pelayanan nomor ' . $activeQueue->nomor_antrian . ' terlebih dahulu.');
+            return back()->with('error', 'Selesaikan pelayanan nomor ' . $activeQueue->nomor_antrian . ' terlebih dahulu sebelum memanggil nomor lain.');
         }
 
         $q = Queue::findOrFail($id);
