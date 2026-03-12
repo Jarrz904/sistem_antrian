@@ -48,9 +48,9 @@
                     <select name="status" class="form-select border-0 bg-light" onchange="this.form.submit()">
                         <option value="">Semua Status</option>
                         <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
-                        <option value="lewat" {{ request('status') == 'lewat' ? 'selected' : '' }}>Dilewati</option>
+                        <option value="dilewati" {{ request('status') == 'dilewati' || request('status') == 'lewat' ? 'selected' : '' }}>Dilewati</option>
                         <option value="dipanggil" {{ request('status') == 'dipanggil' ? 'selected' : '' }}>Dipanggil</option>
-                        <option value="diproses" {{ request('status') == 'diproses' ? 'selected' : '' }}>Selesai Diproses</option>
+                        <option value="selesai diproses" {{ request('status') == 'selesai diproses' || request('status') == 'diproses' ? 'selected' : '' }}>Selesai Diproses</option>
                         <option value="pengambilan_dokumen" {{ request('status') == 'pengambilan_dokumen' ? 'selected' : '' }}>Pengambilan Dokumen</option>
                         <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
                     </select>
@@ -111,13 +111,13 @@
                                 <td>
                                     @if($q->status == 'menunggu')
                                         <span class="badge bg-secondary-subtle text-secondary border">Menunggu</span>
-                                    @elseif($q->status == 'lewat')
+                                    @elseif($q->status == 'dilewati' || $q->status == 'lewat')
                                         <span class="badge bg-danger-subtle text-danger border">Dilewati</span>
                                     @elseif($q->status == 'dipanggil')
                                         <span class="badge bg-info-subtle text-info border">
                                             <i class="fas fa-volume-up me-1"></i> Dipanggil
                                         </span>
-                                    @elseif($q->status == 'diproses')
+                                    @elseif($q->status == 'selesai diproses' || $q->status == 'diproses')
                                         <span class="badge bg-primary text-white border shadow-sm">
                                             <i class="fas fa-sync-alt me-1"></i> Selesai Diproses
                                         </span>
@@ -185,9 +185,9 @@
                                                     <label class="form-label small fw-bold text-uppercase text-primary">Status Antrian</label>
                                                     <select name="status" class="form-select border-primary">
                                                         <option value="menunggu" {{ $q->status == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
-                                                        <option value="lewat" {{ $q->status == 'lewat' ? 'selected' : '' }}>Dilewati</option>
+                                                        <option value="dilewati" {{ $q->status == 'dilewati' || $q->status == 'lewat' ? 'selected' : '' }}>Dilewati</option>
                                                         <option value="dipanggil" {{ $q->status == 'dipanggil' ? 'selected' : '' }}>Dipanggil</option>
-                                                        <option value="diproses" {{ $q->status == 'diproses' ? 'selected' : '' }}>Selesai Diproses</option>
+                                                        <option value="selesai diproses" {{ $q->status == 'selesai diproses' || $q->status == 'diproses' ? 'selected' : '' }}>Selesai Diproses</option>
                                                         <option value="pengambilan_dokumen" {{ $q->status == 'pengambilan_dokumen' ? 'selected' : '' }}>Pengambilan Dokumen</option>
                                                         <option value="selesai" {{ $q->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
                                                     </select>

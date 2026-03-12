@@ -138,17 +138,16 @@ class PetugasController extends Controller
 
                 /**
                  * Logika Penentuan Status untuk CSV
-                 * Memastikan layanan Rekam KTP terlihat "Selesai" tanpa "Pengambilan"
+                 * Memastikan status 'dilewati' atau 'lewat' terbaca sebagai 'Dilewati/Tidak Hadir'
                  */
                 $isRekam = str_contains(strtolower($row->layanan->nama_layanan ?? ''), 'rekam');
 
-                // PERBAIKAN: Status diseragamkan menjadi 'selesai diproses' (satu spasi)
                 $statusLabel = match($row->status) {
                     'selesai'             => $isRekam ? 'Selesai (Rekam KTP)' : 'Selesai (Arsip)',
                     'pengambilan_dokumen' => 'Menunggu Pengambilan',
                     'selesai diproses'    => 'Selesai Pelayanan (Proses Dokumen)',
                     'dipanggil'           => 'Baru Dipanggil',
-                    'lewat'               => 'Dilewati/Tidak Hadir',
+                    'dilewati', 'lewat'   => 'Dilewati/Tidak Hadir', // Menyesuaikan kedua kemungkinan value
                     default               => 'Menunggu Antrian',
                 };
 

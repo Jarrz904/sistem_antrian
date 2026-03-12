@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         :root {
@@ -93,7 +95,6 @@
         }
 
         .icon-primary { background: linear-gradient(135deg, #007bff, #00d4ff); }
-        .icon-dark { background: linear-gradient(135deg, #1e293b, #475569); }
 
         .btn-custom {
             padding: 15px 30px;
@@ -106,6 +107,7 @@
             background: linear-gradient(to right, #007bff, #6610f2);
             border: none;
             color: white;
+            text-decoration: none;
         }
 
         .footer-info {
@@ -114,13 +116,43 @@
             color: #475569;
         }
 
-        /* Modal Styles */
-        .modal-content { border-radius: 25px; border: none; }
-        
+        /* Styling Modal Peringatan Diperbesar */
+        .swal-huge-popup {
+            padding: 3.5rem !important;
+            border-radius: 40px !important;
+            width: 850px !important; /* Ukuran lebar yang menutupi konten utama */
+        }
+        .swal-huge-title {
+            font-size: 3.5rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            margin-bottom: 1rem !important;
+        }
+        .swal-huge-content {
+            font-size: 1.8rem !important;
+            line-height: 1.5 !important;
+            font-weight: 600 !important;
+            color: #475569 !important;
+            margin-bottom: 2rem !important;
+        }
+        .swal-huge-button {
+            padding: 20px 60px !important;
+            font-size: 1.8rem !important;
+            border-radius: 20px !important;
+            font-weight: 700 !important;
+        }
+        .swal2-icon.swal2-warning {
+            transform: scale(1.8); /* Memperbesar icon warning sedikit */
+            margin-bottom: 2.5rem !important;
+        }
+
         @media print {
             body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible;color: #000 !important; /* Hitam Pekat */
-                font-weight: 800 !important; /* Sangat Tebal */ }
+            #printArea, #printArea * { 
+                visibility: visible; 
+                color: #000 !important; 
+                font-weight: 800 !important; 
+            }
             #printArea { 
                 position: fixed; left: 0; top: 0; width: 100%; 
                 text-align: center; padding: 30px; border: none !important;
@@ -130,11 +162,6 @@
         @media (min-width: 992px) {
             body { overflow: hidden; }
             .wrapper { padding: 0; }
-        }
-
-        @media (max-width: 768px) {
-            .display-4 { margin-top: 20px; }
-            .card-custom { padding: 20px !important; }
         }
     </style>
 </head>
@@ -159,14 +186,13 @@
                             </div>
                             <h2 class="fw-bold mb-3">Ambil Antrian</h2>
                             <p class="text-secondary mb-4">Daftar secara mandiri untuk mendapatkan nomor urut pelayanan hari ini.</p>
-                            <a href="{{ route('user.dashboard') }}" class="btn btn-primary-custom btn-custom btn-lg w-100 shadow">
+                            
+                            <button id="btnMulaiSekarang" class="btn btn-primary-custom btn-custom btn-lg w-100 shadow">
                                 Mulai Sekarang <i class="fas fa-arrow-right ms-2"></i>
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
-
-
             </div>
 
             <div class="footer-info text-center">
@@ -197,7 +223,7 @@
                         <hr>
                         <p class="fw-bold mb-0 text-dark">{{ session('success_data')['layanan'] }}</p>
                         <p class="mb-0 text-dark">{{ session('success_data')['nama'] }}</p>
-                        <small class="text-muted">{{ session('success_data')['waktu'] }}</small>
+                        <small class="text-muted">{{ session('success_data')['tanggal'] }} | {{ session('success_data')['waktu'] }}</small>
                     </div>
 
                     <div class="d-grid gap-2">
@@ -217,16 +243,59 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Trigger modal sukses otomatis jika data session tersedia
-        @if(session('success_data'))
-            document.addEventListener('DOMContentLoaded', function() {
-                const elSukses = document.getElementById('modalSukses');
-                if (elSukses) {
-                    const modalSuksesObj = new bootstrap.Modal(elSukses);
-                    modalSuksesObj.show();
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            @if(session('success_data'))
+                const elModal = document.getElementById('modalSukses');
+                if (elModal) {
+                    const myModal = new bootstrap.Modal(elModal);
+                    myModal.show();
                 }
+            @endif
+
+            const btnMulai = document.getElementById('btnMulaiSekarang');
+
+            btnMulai.addEventListener('click', function() {
+                const originalText = btnMulai.innerHTML;
+                btnMulai.disabled = true;
+                btnMulai.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Menghubungkan...';
+
+                fetch("{{ route('api.system-status.public') }}")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'off') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Layanan Dihentikan',
+                                text: 'Mohon maaf antrian telah di tutup.',
+                                width: '850px', 
+                                confirmButtonColor: '#007bff',
+                                confirmButtonText: 'SAYA MENGERTI',
+                                customClass: {
+                                    popup: 'swal-huge-popup',
+                                    title: 'swal-huge-title',
+                                    htmlContainer: 'swal-huge-content',
+                                    confirmButton: 'swal-huge-button'
+                                },
+                                showClass: {
+                                    popup: 'animate__animated animate__zoomIn'
+                                },
+                                hideClass: {
+                                    popup: 'animate__animated animate__zoomOut'
+                                }
+                            });
+                            btnMulai.disabled = false;
+                            btnMulai.innerHTML = originalText;
+                        } else {
+                            window.location.href = "{{ route('user.dashboard') }}";
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch Error:', error);
+                        window.location.href = "{{ route('user.dashboard') }}";
+                    });
             });
-        @endif
+        });
     </script>
 </body>
 </html>

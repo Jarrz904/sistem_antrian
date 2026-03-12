@@ -268,8 +268,9 @@
                     const teks = `Nomor antrian, ${nomorEja}, silakan menuju ke, ${item.loket}`;
                     const utter = new SpeechSynthesisUtterance(teks);
                     utter.lang = 'id-ID';
+                    utter.volume = 1.0;
                     utter.rate = 0.85; 
-                    utter.pitch = 1.0; 
+                    utter.pitch = 1.2; 
                     
                     if (indonesianVoice) utter.voice = indonesianVoice;
 

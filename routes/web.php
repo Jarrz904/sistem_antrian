@@ -16,15 +16,23 @@ use App\Http\Controllers\Admin\PetugasController as AdminPetugas;
 | Public Routes (Akses Tanpa Login)
 |--------------------------------------------------------------------------
 */
+
 Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
 
 // Route Masyarakat untuk Ambil Antrian
 Route::get('/ambil-antrian', [UserDashboardController::class, 'index'])->name('user.dashboard');
 Route::post('/store-antrian', [UserDashboardController::class, 'store'])->name('user.store');
 
-// Route Display Monitor TV (Akses Publik/TV)
+// API Public untuk Status Sistem (Mencegah Error RouteNotFound)
+Route::get('/api/system-status', [AdminDashboard::class, 'getSystemStatusApi'])->name('api.system-status.public');
+
+/*
+|--------------------------------------------------------------------------
+| Route Display Monitor TV (Akses Publik/TV)
+|--------------------------------------------------------------------------
+*/
 Route::get('/display', [DisplayController::class, 'index'])->name('display');
-Route::get('/api/display-data', [DisplayController::class, 'getDisplayData']); // API JSON untuk AJAX Display
+Route::get('/api/display-data', [DisplayController::class, 'getDisplayData'])->name('api.display-data.public');
 
 /*
 |--------------------------------------------------------------------------
@@ -42,7 +50,7 @@ Route::get('/api/lokets', [DisplayController::class, 'getLokets']);
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:petugas'])->prefix('petugas')->group(function () {
-    // Halaman Utama Petugas
+    // Halaman Utama Petugas (Mendukung AJAX Realtime)
     Route::get('/', [AntrianController::class, 'index'])->name('petugas.dashboard');
 
     // Aksi Panggil Antrian Baru
@@ -51,7 +59,8 @@ Route::middleware(['auth', 'role:petugas'])->prefix('petugas')->group(function (
     // Aksi Panggil Ulang (Recall)
     Route::post('/panggil-ulang/{id}', [AntrianController::class, 'panggilUlang'])->name('petugas.panggilUlang');
 
-    // Route Aksi (Selesai/Lewati) - Disinkronkan menjadi 'petugas.aksi' agar sesuai dengan Blade
+    // Route Aksi (Selesai/Lewati)
+    // Menggunakan parameter {status} untuk membedakan antara 'selesai' dan 'lewat'
     Route::post('/aksi/{id}/{status}', [AntrianController::class, 'aksi'])->name('petugas.aksi');
 });
 
@@ -61,9 +70,13 @@ Route::middleware(['auth', 'role:petugas'])->prefix('petugas')->group(function (
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
-    
+
     // Dashboard Ringkasan Statistik
     Route::get('/', [AdminDashboard::class, 'index'])->name('admin.dashboard');
+
+    // --- Fitur Operasional (Buka/Tutup Sistem) ---
+    Route::post('/system/toggle', [AdminDashboard::class, 'toggleSystem'])->name('admin.toggle-status');
+    Route::get('/api/system-status-admin', [AdminDashboard::class, 'getSystemStatusApi'])->name('api.system-status');
 
     // --- Kelola Petugas ---
     Route::get('/petugas', [AdminPetugas::class, 'index'])->name('admin.petugas');
@@ -74,7 +87,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     // --- Kelola Loket ---
     Route::post('/loket/update/{id}', [AdminPetugas::class, 'updateLoket'])->name('admin.loket.update');
 
-    // --- KELOLA LAYANAN (Integrasi Baru) ---
+    // --- KELOLA LAYANAN ---
     Route::get('/layanan', [AdminDashboard::class, 'layananIndex'])->name('admin.layanan');
     Route::post('/layanan/store', [AdminDashboard::class, 'layananStore'])->name('admin.layanan.store');
     Route::put('/layanan/update/{id}', [AdminDashboard::class, 'layananUpdate'])->name('admin.layanan.update');
@@ -84,13 +97,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/antrian', [AdminDashboard::class, 'antrianIndex'])->name('admin.antrian');
     Route::post('/antrian/update/{id}', [AdminDashboard::class, 'updateAntrian'])->name('admin.antrian.update');
     Route::delete('/antrian/delete/{id}', [AdminDashboard::class, 'deleteAntrian'])->name('admin.antrian.delete');
-    
+
     // Reset Display & Realtime Stats
     Route::get('/reset-display', [AdminDashboard::class, 'resetDisplay'])->name('admin.reset-display');
     Route::get('/realtime-stats', [AdminDashboard::class, 'getRealtimeStats'])->name('admin.realtime-stats');
 
-    // Recall Khusus Petugas/Admin
-    Route::post('/petugas/recall/{id}', [AntrianController::class, 'panggilUlang'])->name('petugas.panggilUlang');
+    // Recall Khusus Petugas/Admin (Back-end Support)
+    Route::post('/petugas/recall/{id}', [AntrianController::class, 'panggilUlang'])->name('admin.petugas.recall');
 
     // --- Fitur Export ---
     Route::get('/export-masyarakat', [AdminDashboard::class, 'exportCSV'])->name('admin.export');

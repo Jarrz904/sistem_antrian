@@ -44,21 +44,22 @@
                                 </form>
 
                                 {{-- POSISI 2: TOMBOL LEWATI --}}
+                                {{-- PERBAIKAN LOGIKA: Tombol Lewati hanya aktif jika ada antrian lain di daftar tunggu --}}
                                 <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'lewat']) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3 action-btn">
-                                        LEWATI NOMOR INI <i class="fas fa-step-forward ms-1"></i>
+                                    <button type="submit" class="btn btn-outline-danger w-100 fw-bold py-3 action-btn" 
+                                        @if($antrian->count() == 0) disabled title="Tidak ada antrian berikutnya untuk dipanggil" @endif>
+                                        LEWATI & PANGGIL BARU <i class="fas fa-step-forward ms-1"></i>
                                     </button>
                                 </form>
 
-                                {{-- POSISI 3: TOMBOL SELESAI (SINKRONISASI STATUS BARU) --}}
+                                {{-- POSISI 3: TOMBOL SELESAI --}}
                                 @php
                                     $isLoketPengambilan = is_null(auth()->user()->layanan_id);
                                     $isRekamKTP = str_contains(strtolower(auth()->user()->layanan?->nama_layanan ?? ''), 'rekam');
                                 @endphp
 
                                 @if($isRekamKTP)
-                                    {{-- Rekam KTP langsung ke status 'selesai' (arsip) --}}
                                     <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0 action-btn">
@@ -68,7 +69,6 @@
                                     <small class="text-muted d-block mt-n2">* Layanan Rekam KTP langsung diarsipkan.</small>
 
                                 @elseif($isLoketPengambilan)
-                                    {{-- Loket Pengambilan langsung ke status 'selesai' --}}
                                     <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai']) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow-sm border-0 action-btn">
@@ -76,7 +76,6 @@
                                         </button>
                                     </form>
                                 @else
-                                    {{-- Unit Layanan Umum (Loket 1-7) menggunakan status 'selesai diproses' agar sinkron dengan monitor --}}
                                     <form action="{{ route('petugas.aksi', ['id' => $current->id, 'status' => 'selesai diproses']) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold py-3 shadow-sm border-0 text-white action-btn">
@@ -252,7 +251,6 @@
     let lastAntrianCount = {{ $antrian->count() }};
     let isCurrentEmpty = {{ $current ? 'false' : 'true' }};
 
-    // FUNGSI LOCK: Mencegah double click
     $(document).on('submit', 'form', function() {
         const $btn = $(this).find('button[type="submit"]');
         $btn.prop('disabled', true);
@@ -269,10 +267,18 @@
                 $('#count-menunggu').text(response.count + ' Orang');
                 $('#wait-count').text(response.count);
 
-                // Reload jika ada antrian baru masuk saat kondisi kosong
+                // Reload otomatis jika ada antrian masuk saat petugas standby
                 if (isCurrentEmpty && response.count > 0 && lastAntrianCount === 0) {
                     location.reload(); 
                 }
+                
+                // Update status tombol Lewati secara realtime
+                if (response.count === 0) {
+                    $('form[action*="status=lewat"] button').prop('disabled', true).attr('title', 'Tidak ada antrian berikutnya');
+                } else {
+                    $('form[action*="status=lewat"] button').prop('disabled', false).removeAttr('title');
+                }
+
                 lastAntrianCount = response.count;
 
                 // Update Tabel Menunggu
@@ -340,5 +346,6 @@
     .btn-lg:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
     code { font-family: 'Courier New', Courier, monospace; color: #e83e8c; }
     .action-btn.disabled { opacity: 0.6; pointer-events: none; }
+    button:disabled { cursor: not-allowed; }
 </style>
 @endsection

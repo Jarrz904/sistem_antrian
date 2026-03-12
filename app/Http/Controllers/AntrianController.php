@@ -23,7 +23,7 @@ class AntrianController extends Controller
         // 1. DAFTAR TUNGGU
         $antrian = Queue::whereDate('created_at', $today)
             ->when($isPengambilanPetugas, function($q) {
-                // PERBAIKAN: Loket Pengambilan menunggu antrian yang dikirim unit (status: 'selesai diproses')
+                // Loket Pengambilan menunggu antrian yang dikirim unit (status: 'selesai diproses')
                 return $q->where('status', 'selesai diproses');
             }, function($q) use ($user) {
                 // Loket Unit menunggu antrian sesuai layanan masing-masing ('menunggu')
@@ -33,11 +33,14 @@ class AntrianController extends Controller
             ->with('layanan')
             ->get();
 
-        // 2. DAFTAR DILEWATI
-        $skipped = Queue::where('status', 'lewat')
+        // 2. DAFTAR DILEWATI (Update: Filter khusus agar pengambilan tidak mengotori riwayat umum)
+        $skipped = Queue::where(function($q) {
+                $q->where('status', 'dilewati')->orWhere('status', 'lewat');
+            })
             ->whereDate('created_at', $today)
             ->when($isPengambilanPetugas, function($q) use ($user) {
-                return $q->where('loket_id', $user->loket_id);
+                // Filter ketat: Hanya yang dilewati di loket pengambilan ini
+                return $q->where('loket_id', $user->loket_id)->where('status', 'dilewati');
             }, function($q) use ($user) {
                 return $q->where('layanan_id', $user->layanan_id);
             })
@@ -50,7 +53,7 @@ class AntrianController extends Controller
                 // Riwayat pengambilan di loket ini
                 return $q->where('status', 'selesai')->where('loket_id', $user->loket_id);
             }, function($q) use ($user) {
-                // PERBAIKAN: Menampilkan status 'selesai diproses' agar muncul di tabel riwayat petugas unit
+                // Menampilkan status 'selesai diproses' agar muncul di tabel riwayat petugas unit
                 return $q->whereIn('status', ['selesai', 'diproses', 'selesai diproses', 'pengambilan_dokumen'])
                          ->where('user_id', $user->id);
             })
@@ -61,11 +64,9 @@ class AntrianController extends Controller
         $current = Queue::whereDate('created_at', $today)
             ->where(function($query) use ($user, $isPengambilanPetugas) {
                 if ($isPengambilanPetugas) {
-                    // Jika petugas pengambilan, cari berdasarkan loket_id aktif
                     $query->where('loket_id', $user->loket_id)
                           ->where('status', 'pengambilan_dokumen');
                 } else {
-                    // Jika petugas unit, cari berdasarkan user_id (kepemilikan antrian)
                     $query->where('user_id', $user->id)
                           ->where('status', 'dipanggil');
                 }
@@ -91,15 +92,12 @@ class AntrianController extends Controller
      * Fungsi Internal untuk menentukan status akhir
      */
     private function determineFinalStatus($queue, $isPengambilanPetugas) {
-        // Jika diproses oleh petugas pengambilan, status akhirnya mutlak 'selesai'
         if ($isPengambilanPetugas) {
             return 'selesai';
         }
 
-        // Ambil nama layanan untuk pengecekan
         $namaLayanan = strtoupper($queue->layanan->nama_layanan ?? '');
 
-        // Daftar kata kunci layanan yang tidak membutuhkan pengambilan dokumen
         $langsungSelesai = [
             'REKAM KTP',
             'REKAM BIOMETRIK',
@@ -115,7 +113,6 @@ class AntrianController extends Controller
             }
         }
 
-        // Default: Unit Layanan melempar ke Loket Pengambilan
         return 'selesai diproses';
     }
 
@@ -129,7 +126,7 @@ class AntrianController extends Controller
 
         $isPengambilanPetugas = is_null($user->layanan_id);
 
-        // 1. OTOMATISASI: Selesaikan antrian lama yang sedang ditangani user/loket ini
+        // 1. OTOMATISASI: Selesaikan antrian lama milik PETUGAS INI (berdasarkan user_id atau loket_id pengambilan)
         $oldQueue = Queue::whereDate('created_at', $today)
             ->where(function($q) use ($user, $isPengambilanPetugas) {
                 if ($isPengambilanPetugas) {
@@ -150,7 +147,6 @@ class AntrianController extends Controller
         // 2. Cari antrian berikutnya
         $qNext = Queue::whereDate('created_at', $today)
             ->when($isPengambilanPetugas, function($query) {
-                // PERBAIKAN: Cari antrian yang sudah dikirim oleh unit (status: 'selesai diproses')
                 return $query->where('status', 'selesai diproses');
             }, function($query) use ($user) {
                 return $query->where('status', 'menunggu')->where('layanan_id', $user->layanan_id);
@@ -167,12 +163,15 @@ class AntrianController extends Controller
         
         $updateData = [
             'status'     => $newStatus, 
-            'loket_id'   => $user->loket_id, 
             'panggil_at' => $now,
             'updated_at' => $now 
         ];
 
-        // PENTING: Jika petugas pengambilan, JANGAN timpa user_id agar nomor tetap terkunci pada petugas unit asal.
+        // LOGIKA PERBAIKAN: 
+        // Jika petugas pengambilan, kita set loket_id agar muncul di monitor pengambilan, 
+        // tapi TIDAK menghapus user_id petugas unit sebelumnya agar riwayat proses awal tetap ada.
+        $updateData['loket_id'] = $user->loket_id;
+        
         if (!$isPengambilanPetugas) {
             $updateData['user_id'] = $user->id;
         }
@@ -196,7 +195,9 @@ class AntrianController extends Controller
 
         $q = Queue::with('layanan')->findOrFail($id);
         
-        $finalStatus = $status;
+        $originalStatus = $status;
+        $finalStatus = ($status == 'lewat') ? 'dilewati' : $status;
+
         if ($status == 'selesai') {
             $finalStatus = $this->determineFinalStatus($q, $isPengambilanPetugas);
         }
@@ -206,11 +207,21 @@ class AntrianController extends Controller
             'updated_at' => $now 
         ];
 
-        if ($status == 'lewat') {
-            $updateData['user_id'] = $user->id;
+        // Jika dilewati di loket unit, catat user_id. 
+        // Jika dilewati di loket pengambilan, pastikan tetap terkait loket_id tersebut.
+        if ($status == 'lewat' || $status == 'dilewati') {
+            if (!$isPengambilanPetugas) {
+                $updateData['user_id'] = $user->id;
+            }
+            $updateData['loket_id'] = $user->loket_id;
         }
 
         $q->update($updateData);
+        
+        // LOGIKA KHUSUS DILEWATI: Otomatis panggil nomor selanjutnya
+        if ($originalStatus == 'lewat') {
+            return $this->panggil(request());
+        }
         
         return back()->with('success', 'Status antrian ' . $q->nomor_antrian . ' diperbarui.');
     }
@@ -237,7 +248,7 @@ class AntrianController extends Controller
             })->first();
 
         if ($activeQueue) {
-            return back()->with('error', 'Selesaikan pelayanan nomor ' . $activeQueue->nomor_antrian . ' terlebih dahulu sebelum memanggil nomor lain.');
+            return back()->with('error', 'Selesaikan pelayanan nomor ' . $activeQueue->nomor_antrian . ' terlebih dahulu.');
         }
 
         $q = Queue::findOrFail($id);

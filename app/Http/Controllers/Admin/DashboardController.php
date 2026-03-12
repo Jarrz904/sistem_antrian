@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Queue, Layanan, User};
+use App\Models\{Queue, Layanan, User, Setting}; // Pastikan model Setting ada jika digunakan untuk simpan status
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
@@ -16,8 +17,14 @@ class DashboardController extends Controller
     {
         $data = $this->getStatsData();
         $layanans = Layanan::all();
+        
+        // Ambil status sistem (default 'on' jika belum ada)
+        $systemStatus = Cache::get('system_status', 'on');
 
-        return view('admin.dashboard', array_merge($data, ['layanans' => $layanans]));
+        return view('admin.dashboard', array_merge($data, [
+            'layanans' => $layanans,
+            'systemStatus' => $systemStatus
+        ]));
     }
 
     /**
@@ -25,7 +32,33 @@ class DashboardController extends Controller
      */
     public function getRealtimeStats()
     {
-        return response()->json($this->getStatsData());
+        $data = $this->getStatsData();
+        $data['systemStatus'] = Cache::get('system_status', 'on');
+        return response()->json($data);
+    }
+
+    /**
+     * Fitur Buka/Tutup Sistem (ON/OFF)
+     */
+    public function toggleSystem(Request $request)
+    {
+        $status = $request->status === 'on' ? 'on' : 'off';
+        
+        // Simpan status di Cache agar akses cepat oleh Petugas & User
+        Cache::forever('system_status', $status);
+
+        $message = $status === 'on' ? 'Sistem Pendaftaran dibuka.' : 'Sistem Pendaftaran ditutup.';
+        return back()->with('success', $message);
+    }
+
+    /**
+     * API Status Sistem untuk dibaca Dashboard Petugas secara Realtime
+     */
+    public function getSystemStatusApi()
+    {
+        return response()->json([
+            'status' => Cache::get('system_status', 'on')
+        ]);
     }
 
     /**
@@ -38,47 +71,18 @@ class DashboardController extends Controller
         // Query dasar untuk efisiensi
         $baseQuery = Queue::whereDate('created_at', $today);
 
-        // 1. Menunggu
-        $menungguCount = (clone $baseQuery)
-            ->where('status', 'menunggu')
-            ->count();
-
-        // 2. Dipanggil
-        $dipanggilCount = (clone $baseQuery)
-            ->where('status', 'dipanggil')
-            ->count();
-
-        // 3. Selesai di Proses (Diseragamkan menggunakan: 'selesai diproses')
-        $diprosesCount = (clone $baseQuery)
-            ->where('status', 'selesai diproses')
-            ->count();
-
-        // 4. Pengambilan Dokumen
-        $pengambilanCount = (clone $baseQuery)
-            ->where('status', 'pengambilan_dokumen')
-            ->count();
-
-        // 5. Lewat/Dilewati
-        $lewatCount = (clone $baseQuery)
-            ->where('status', 'lewat')
-            ->count();
-
-        // 6. Selesai
-        $selesaiCount = (clone $baseQuery)
-            ->where('status', 'selesai')
-            ->count();
-
         return [
             'totalAntrian'       => (clone $baseQuery)->count(),
-            'menunggu'           => $menungguCount,
-            'dipanggil'          => $dipanggilCount,
-            'selesaidiproses'    => $diprosesCount, // Key tetap sama agar sinkron dengan JS/Blade
-            'pengambilanDokumen' => $pengambilanCount,
-            'lewat'              => $lewatCount,
-            'selesai'            => $selesaiCount,
+            'menunggu'           => (clone $baseQuery)->where('status', 'menunggu')->count(),
+            'dipanggil'          => (clone $baseQuery)->where('status', 'dipanggil')->count(),
+            'selesaidiproses'    => (clone $baseQuery)->where('status', 'selesai diproses')->count(),
+            'pengambilanDokumen' => (clone $baseQuery)->where('status', 'pengambilan_dokumen')->count(),
+            'dilewati'           => (clone $baseQuery)->where('status', 'dilewati')->count(),
+            'selesai'            => (clone $baseQuery)->where('status', 'selesai')->count(),
             'dataAntrian'        => Queue::with(['layanan', 'loket', 'petugas'])
                 ->whereDate('created_at', $today)
                 ->orderBy('created_at', 'desc')
+                ->take(10) // Ambil 10 terbaru untuk performa dashboard
                 ->get()
         ];
     }
@@ -174,8 +178,7 @@ class DashboardController extends Controller
         $request->validate([
             'nama_pendaftar' => 'required|string|max:255',
             'layanan_id'     => 'required|exists:layanans,id',
-            // Menjamin status 'selesai diproses' valid untuk diinput manual oleh Admin
-            'status'         => 'required|in:menunggu,dipanggil,lewat,selesai diproses,pengambilan_dokumen,selesai'
+            'status'         => 'required|in:menunggu,dipanggil,dilewati,selesai diproses,pengambilan_dokumen,selesai'
         ]);
 
         $antrian = Queue::findOrFail($id);
@@ -240,13 +243,12 @@ class DashboardController extends Controller
                 $date = Carbon::parse($q->created_at)->timezone('Asia/Jakarta');
                 $isRekam = str_contains(strtolower($q->layanan->nama_layanan ?? ''), 'rekam');
 
-                // Mapping label status agar rapi di file CSV
                 $statusLabel = match($q->status) {
                     'selesai'             => 'Selesai',
                     'pengambilan_dokumen' => 'Menunggu Pengambilan',
                     'selesai diproses'    => $isRekam ? 'Selesai (Rekam KTP)' : 'Selesai Pelayanan (Proses Dokumen)',
                     'dipanggil'           => 'Dipanggil',
-                    'lewat'               => 'Dilewati',
+                    'dilewati'            => 'Dilewati',
                     default               => 'Menunggu',
                 };
 
