@@ -163,8 +163,15 @@
         }
 
         @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
+            body * {
+                visibility: hidden;
+            }
+
+            #printArea,
+            #printArea * {
+                visibility: visible;
+            }
+
             #printArea {
                 position: absolute;
                 left: 0;
@@ -176,6 +183,7 @@
         }
 
         @media (max-width: 992px) {
+
             .services-grid,
             .grid-layout-wide {
                 grid-template-columns: repeat(2, 1fr) !important;
@@ -199,19 +207,37 @@
         <main class="content-section">
             <div class="services-grid {{ count($layanans) > 6 ? 'grid-layout-wide' : '' }}">
                 @foreach($layanans as $l)
-                    <div class="card card-layanan">
-                        <div class="icon-wrapper">
-                            <i class="{{ $l->icon ?? 'fas fa-file-invoice' }} fa-2x"></i>
-                        </div>
-                        <h3 class="card-title">{{ $l->nama_layanan }}</h3>
-                        <div class="card-text">
-                            {{ $l->deskripsi ?? 'Silahkan ambil nomor antrian untuk mendapatkan pelayanan.' }}
-                        </div>
-                        <button type="button" class="btn btn-primary btn-pilih"
-                            onclick="ambilAntrianLangsung(this, '{{ $l->id }}')">
-                            AMBIL NOMOR
-                        </button>
+                @php
+                // Hitung antrian hari ini secara realtime
+                $currentCount = \App\Models\Queue::where('layanan_id', $l->id)
+                ->whereDate('created_at', \Carbon\Carbon::today())
+                ->count();
+
+                $isFull = ($l->kuota_harian > 0 && $currentCount >= $l->kuota_harian);
+                @endphp
+
+                <div class="card card-layanan {{ $isFull ? 'bg-light' : '' }}" style="{{ $isFull ? 'opacity: 0.8;' : '' }}">
+                    <div class="icon-wrapper {{ $isFull ? 'bg-secondary text-white' : '' }}">
+                        <i class="{{ $l->icon ?? 'fas fa-file-invoice' }} fa-2x"></i>
                     </div>
+                    <h3 class="card-title">{{ $l->nama_layanan }}</h3>
+                    <div class="card-text">
+                        @if($isFull)
+                        <span class="text-danger fw-bold fs-4">
+                            <i class="fas fa-ban"></i> KUOTA PENUH HARI INI
+                        </span>
+                        @else
+                        {{ $l->deskripsi ?? 'Silahkan ambil nomor antrian untuk mendapatkan pelayanan.' }}
+                        @endif
+                    </div>
+
+                    {{-- Menambahkan parameter isFull, namaLayanan, dan kuotaHarian ke fungsi --}}
+                    <button type="button"
+                        class="btn {{ $isFull ? 'btn-danger' : 'btn-primary' }} btn-pilih"
+                        onclick="ambilAntrianLangsung(this, '{{ $l->id }}', {{ $isFull ? 'true' : 'false' }}, '{{ $l->nama_layanan }}', {{ $l->kuota_harian }})">
+                        {{ $isFull ? 'PENUH' : 'AMBIL NOMOR' }}
+                    </button>
+                </div>
                 @endforeach
             </div>
         </main>
@@ -221,78 +247,115 @@
     <form action="{{ route('user.store') }}" method="POST" id="formAntrianOtomatis" style="display: none;">
         @csrf
         <input type="hidden" name="layanan_id" id="selected_layanan_id">
-        <input type="hidden" name="nama" value="Pemohon"> 
+        <input type="hidden" name="nama" value="Pemohon">
     </form>
 
     {{-- MODAL SUKSES --}}
     @if(session('success_data'))
-        <div class="modal fade" id="modalSukses" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content text-center p-5" style="border-radius: 35px;">
-                    <div class="modal-body">
-                        <div class="text-success mb-3"><i class="fas fa-check-circle fa-7x"></i></div>
-                        <h1 class="fw-800 display-4">BERHASIL!</h1>
-                        <div id="printArea" class="border border-5 rounded-5 p-4 my-4 bg-white shadow-sm">
-                            <p class="text-dark fw-800 fs-2 mb-0">NOMOR ANTRIAN</p>
-                            <h1 class="display-1 fw-800 text-primary my-1" style="font-size: 7rem;">
-                                {{ session('success_data')['nomor'] }}</h1>
-                            <h2 class="fw-800 text-dark fs-1">{{ strtoupper(session('success_data')['layanan']) }}</h2>
-                            <p class="fw-800 text-muted fs-3">{{ session('success_data')['waktu'] }} WIB</p>
-                        </div>
-                        <div class="d-grid gap-3">
-                            <button onclick="printAntrian()"
-                                class="btn btn-primary btn-lg rounded-pill fw-800 py-3 fs-2">CETAK STRUK</button>
-                            <a href="{{ url('/ambil-antrian') }}"
-                                class="btn btn-link text-decoration-none fw-800 fs-4 text-muted">SELESAI</a>
-                        </div>
+    <div class="modal fade" id="modalSukses" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content text-center p-5" style="border-radius: 35px;">
+                <div class="modal-body">
+                    <div class="text-success mb-3"><i class="fas fa-check-circle fa-7x"></i></div>
+                    <h1 class="fw-800 display-4">BERHASIL!</h1>
+                    <div id="printArea" class="border border-5 rounded-5 p-4 my-4 bg-white shadow-sm">
+                        <p class="text-dark fw-800 fs-2 mb-0">NOMOR ANTRIAN</p>
+                        <h1 class="display-1 fw-800 text-primary my-1" style="font-size: 7rem;">
+                            {{ session('success_data')['nomor'] }}
+                        </h1>
+                        <h2 class="fw-800 text-dark fs-1">{{ strtoupper(session('success_data')['layanan']) }}</h2>
+                        <p class="fw-800 text-muted fs-3">{{ session('success_data')['waktu'] }} WIB</p>
+                    </div>
+                    <div class="d-grid gap-3">
+                        <button onclick="printAntrian()"
+                            class="btn btn-primary btn-lg rounded-pill fw-800 py-3 fs-2">CETAK STRUK</button>
+                        <a href="{{ url('/ambil-antrian') }}"
+                            class="btn btn-link text-decoration-none fw-800 fs-4 text-muted">SELESAI</a>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
     @endif
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         /**
-         * Perbaikan Bug: 
-         * 1. Menggunakan parameter 'btn' untuk memastikan referensi elemen tidak hilang (bug currentTarget).
-         * 2. Menambahkan pencegahan submit ganda.
+         * Mengambil antrian secara langsung dengan pengecekan kuota harian.
+         * @param {HTMLElement} btn - Elemen tombol yang diklik
+         * @param {number} layananId - ID Layanan yang dipilih
+         * @param {boolean} isFull - Status apakah kuota sudah penuh (dari backend)
+         * @param {string} namaLayanan - Nama layanan untuk pesan error
+         * @param {number} kuota - Jumlah batas kuota harian
          */
-        function ambilAntrianLangsung(btn, layananId) {
+        function ambilAntrianLangsung(btn, layananId, isFull, namaLayanan, kuota) {
+            // 1. CEK JIKA KUOTA SUDAH PENUH (Client-side Protection)
+            if (isFull) {
+                Swal.fire({
+                    icon: 'error',
+                    title: '<span style="font-weight:800;">KUOTA PENUH</span>',
+                    html: `Mohon maaf, pendaftaran untuk <b>${namaLayanan}</b> hari ini sudah mencapai batas (<b>${kuota} antrian</b>).<br><br>Silahkan mencoba kembali besok hari.`,
+                    confirmButtonText: 'MENGERTI',
+                    confirmButtonColor: '#0d6efd',
+                    padding: '2em',
+                    customClass: {
+                        title: 'text-danger',
+                        confirmButton: 'rounded-pill px-5 py-3 fw-bold'
+                    }
+                });
+                return; // Batalkan proses submit
+            }
+
+            // 2. PROSES SUBMIT JIKA KUOTA TERSEDIA
             const form = document.getElementById('formAntrianOtomatis');
             const inputLayanan = document.getElementById('selected_layanan_id');
 
-            // Validasi elemen
             if (!form || !inputLayanan) return;
 
-            // Kunci tombol agar tidak bisa diklik lagi (mencegah bug nomor loncat/dobel)
+            // Kunci tombol agar tidak bisa diklik lagi (mencegah double entry)
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> MEMPROSES...';
             btn.classList.replace('btn-primary', 'btn-secondary');
 
             // Set data dan kirim
             inputLayanan.value = layananId;
-            
-            // Gunakan timeout kecil untuk memastikan DOM terupdate sebelum submit
+
+            // Timeout singkat untuk memastikan visual update sebelum halaman berpindah
             setTimeout(() => {
                 form.submit();
-            }, 100);
+            }, 150);
         }
 
+        // Tampilkan Modal Sukses setelah Redirect (jika berhasil)
         @if(session('success_data'))
-            document.addEventListener('DOMContentLoaded', function () {
-                const modalElement = document.getElementById('modalSukses');
-                if (modalElement) {
-                    const modalSuksesObj = new bootstrap.Modal(modalElement);
-                    modalSuksesObj.show();
-                }
-            });
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalElement = document.getElementById('modalSukses');
+            if (modalElement) {
+                const modalSuksesObj = new bootstrap.Modal(modalElement);
+                modalSuksesObj.show();
+            }
+        });
         @endif
 
-        function printAntrian() { 
-            window.print(); 
+        // Tangkap Error dari Backend (Misal: sistem tiba-tiba off atau kuota mendadak habis)
+        @if(session('error'))
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'warning',
+                title: 'PEMBERITAHUAN',
+                text: "{{ session('error') }}",
+                confirmButtonColor: '#0d6efd',
+                confirmButtonText: 'OK'
+            });
+        });
+        @endif
+
+        function printAntrian() {
+            window.print();
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
+
 </html>

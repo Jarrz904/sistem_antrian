@@ -91,6 +91,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/layanan', [AdminDashboard::class, 'layananIndex'])->name('admin.layanan');
     Route::post('/layanan/store', [AdminDashboard::class, 'layananStore'])->name('admin.layanan.store');
     Route::put('/layanan/update/{id}', [AdminDashboard::class, 'layananUpdate'])->name('admin.layanan.update');
+    Route::post('/layanan/toggle/{id}', [\App\Http\Controllers\Admin\DashboardController::class, 'layananToggle'])->name('admin.layanan.toggle');
     Route::delete('/layanan/delete/{id}', [AdminDashboard::class, 'layananDestroy'])->name('admin.layanan.destroy');
 
     // --- Kelola Data Antrian (Log/Riwayat) ---

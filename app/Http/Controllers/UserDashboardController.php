@@ -13,22 +13,26 @@ class UserDashboardController extends Controller
     /**
      * Menampilkan halaman utama untuk publik/masyarakat
      */
-    public function index() {
+    public function index()
+    {
         // Cek status sistem, jika 'off' arahkan kembali ke welcome
         if (Cache::get('system_status', 'on') === 'off') {
             return redirect()->route('welcome');
         }
 
         $lokets = Loket::all();
-        $layanans = Layanan::all();
-        
+
+        // Ambil layanan yang aktif saja
+        $layanans = Layanan::where('is_active', true)->get();
+
         return view('public.dashboard_user', compact('lokets', 'layanans'));
     }
 
     /**
      * Menyimpan pendaftaran antrian baru dari masyarakat
      */
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         // 1. Validasi Status Sistem Operasional (Mencegah Bypass)
         if (Cache::get('system_status', 'on') === 'off') {
             return redirect()->route('welcome')->with('error', 'Pendaftaran sedang ditutup.');
@@ -41,7 +45,12 @@ class UserDashboardController extends Controller
 
         // 3. Ambil data layanan
         $layanan = Layanan::findOrFail($request->layanan_id);
-        
+
+        // Proteksi jika ada yang mencoba nembak API/Form saat layanan tutup
+        if (!$layanan->is_active) {
+            return redirect()->back()->with('error', 'Maaf, pendaftaran untuk layanan ' . $layanan->nama_layanan . ' saat ini sedang ditutup.');
+        }
+
         // 4. Validasi Input
         $request->validate([
             'nama' => 'required|string|max:255',
@@ -53,11 +62,20 @@ class UserDashboardController extends Controller
             'nik.digits'    => 'Jika diisi, NIK harus berjumlah tepat 16 digit.',
         ]);
 
-        // 5. Hitung urutan antrian per layanan KHUSUS HARI INI
+        // 5. HITUNG JUMLAH ANTRIAN HARI INI (Untuk Pengecekan Kuota & Nomor Urut)
         $count = Queue::where('layanan_id', $layanan->id)
-                      ->whereDate('created_at', $today)
-                      ->count();
-        
+            ->whereDate('created_at', $today)
+            ->count();
+
+        // --- LOGIKA PEMBATASAN KUOTA HARIAN ---
+        // Jika kuota_harian diisi lebih dari 0, lakukan pengecekan
+        if ($layanan->kuota_harian > 0) {
+            if ($count >= $layanan->kuota_harian) {
+                return redirect()->back()->with('error', 'Mohon maaf, kuota antrian untuk ' . $layanan->nama_layanan . ' hari ini sudah penuh (' . $layanan->kuota_harian . '). Silakan mencoba kembali besok.');
+            }
+        }
+        // --- END LOGIKA KUOTA ---
+
         $nomorUrut = $count + 1;
 
         /** * FORMAT NOMOR ANTRIAN:
@@ -69,11 +87,11 @@ class UserDashboardController extends Controller
         $queue = Queue::create([
             'nomor_antrian'  => $nomorAntrian,
             'nama_pendaftar' => $request->nama,
-            'nik'            => $request->nik ?? null, 
+            'nik'            => $request->nik ?? null,
             'layanan_id'     => $request->layanan_id,
-            'loket_id'       => null, 
+            'loket_id'       => null,
             'status'         => 'menunggu',
-            'created_at'     => $now, 
+            'created_at'     => $now,
             'updated_at'     => $now,
         ]);
 
@@ -84,7 +102,7 @@ class UserDashboardController extends Controller
             'id'      => $queue->id,
             'nomor'   => $nomorAntrian,
             'nama'    => $request->nama,
-            'nik'     => $queue->nik ?? '-', 
+            'nik'     => $queue->nik ?? '-',
             'layanan' => $layanan->nama_layanan,
             'waktu'   => $now->format('H:i'),
             'tanggal' => $now->translatedFormat('d F Y')
@@ -92,13 +110,12 @@ class UserDashboardController extends Controller
     }
 
     /**
-     * API untuk mengecek status sistem secara realtime (Digunakan oleh JS di Welcome Page)
-     * Menghubungkan ke route: api.system-status.public
+     * API untuk mengecek status sistem secara realtime
      */
     public function getStatus()
     {
         return response()->json([
-            'status' => Cache::get('system_status', 'on') // Default 'on' jika belum diset admin
+            'status' => Cache::get('system_status', 'on')
         ]);
     }
 }

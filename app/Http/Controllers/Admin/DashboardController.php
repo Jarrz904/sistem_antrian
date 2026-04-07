@@ -17,7 +17,7 @@ class DashboardController extends Controller
     {
         $data = $this->getStatsData();
         $layanans = Layanan::all();
-        
+
         // Ambil status sistem (default 'on' jika belum ada)
         $systemStatus = Cache::get('system_status', 'on');
 
@@ -43,7 +43,7 @@ class DashboardController extends Controller
     public function toggleSystem(Request $request)
     {
         $status = $request->status === 'on' ? 'on' : 'off';
-        
+
         // Simpan status di Cache agar akses cepat oleh Petugas & User
         Cache::forever('system_status', $status);
 
@@ -105,7 +105,8 @@ class DashboardController extends Controller
             'nama_layanan'    => 'required|string|max:255',
             'kode_layanan'    => 'required|alpha|max:1|unique:layanans,prefix',
             'is_nik_required' => 'required|boolean',
-            'deskripsi'       => 'nullable|string'
+            'deskripsi'       => 'nullable|string',
+            'kuota_harian' => 'required|integer|min:0'
         ]);
 
         Layanan::create([
@@ -113,7 +114,8 @@ class DashboardController extends Controller
             'prefix'          => strtoupper($request->kode_layanan),
             'is_nik_required' => $request->is_nik_required,
             'deskripsi'       => $request->deskripsi,
-            'icon'            => 'fas fa-file-alt'
+            'icon'            => 'fas fa-file-alt',
+            'is_active'       => true
         ]);
 
         return back()->with('success', 'Layanan baru berhasil ditambahkan!');
@@ -135,6 +137,7 @@ class DashboardController extends Controller
             'prefix'          => strtoupper($request->kode_layanan),
             'is_nik_required' => $request->is_nik_required,
             'deskripsi'       => $request->deskripsi,
+            'kuota_harian'    => $request->kuota_harian,
         ]);
 
         return back()->with('success', 'Data layanan berhasil diperbarui!');
@@ -150,6 +153,27 @@ class DashboardController extends Controller
 
         $layanan->delete();
         return back()->with('success', 'Layanan berhasil dihapus!');
+    }
+
+    /**
+     * Mengaktifkan atau menonaktifkan layanan tertentu (Hanya Admin)
+     */
+    public function layananToggle($id)
+    {
+        try {
+            // Cari layanan berdasarkan ID
+            $layanan = Layanan::findOrFail($id);
+
+            // Balikkan status: jika true (1) jadi false (0), dan sebaliknya
+            $layanan->is_active = !$layanan->is_active;
+            $layanan->save();
+
+            $statusText = $layanan->is_active ? 'diaktifkan (Buka)' : 'dinonaktifkan (Tutup)';
+
+            return back()->with('success', "Layanan {$layanan->nama_layanan} berhasil {$statusText}.");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengubah status layanan: ' . $e->getMessage());
+        }
     }
 
     /*
@@ -243,7 +267,7 @@ class DashboardController extends Controller
                 $date = Carbon::parse($q->created_at)->timezone('Asia/Jakarta');
                 $isRekam = str_contains(strtolower($q->layanan->nama_layanan ?? ''), 'rekam');
 
-                $statusLabel = match($q->status) {
+                $statusLabel = match ($q->status) {
                     'selesai'             => 'Selesai',
                     'pengambilan_dokumen' => 'Menunggu Pengambilan',
                     'selesai diproses'    => $isRekam ? 'Selesai (Rekam KTP)' : 'Selesai Pelayanan (Proses Dokumen)',
@@ -255,7 +279,7 @@ class DashboardController extends Controller
                 fputcsv($file, [
                     $q->nomor_antrian,
                     $q->nama_pendaftar,
-                    (!empty($q->nik) ? $q->nik . "\t" : '-'), 
+                    (!empty($q->nik) ? $q->nik . "\t" : '-'),
                     $q->layanan->nama_layanan ?? '-',
                     $date->translatedFormat('d F Y'),
                     $date->format('H:i'),
