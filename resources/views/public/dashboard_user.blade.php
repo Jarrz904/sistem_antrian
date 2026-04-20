@@ -20,11 +20,15 @@
 
         html,
         body {
-            height: 100vh;
+            min-height: 100vh;
+            /* Gunakan min-height agar bisa melar */
             width: 100vw;
             margin: 0;
             padding: 0;
-            overflow: hidden;
+            overflow-y: auto;
+            /* Izinkan scroll ke bawah */
+            overflow-x: hidden;
+            /* Tetap kunci scroll ke samping */
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #f0f2f5;
             color: var(--text-dark);
@@ -33,8 +37,10 @@
         .page-wrapper {
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            padding: 2vh 2vw;
+            min-height: 100vh;
+            /* Ubah dari height menjadi min-height */
+            padding: 4vh 2vw;
+            /* Tambah padding sedikit agar lebih lega */
         }
 
         .compact-header {
@@ -60,21 +66,25 @@
         .content-section {
             flex: 1 1 auto;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
+            /* Ubah dari center agar mulai dari atas */
             justify-content: center;
-            overflow: hidden;
+            overflow: visible;
+            /* Biarkan konten keluar dari kotak */
         }
 
         .services-grid {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            align-content: center;
-            grid-template-columns: repeat(3, 1fr);
-            grid-auto-rows: 1fr;
+            align-content: flex-start;
+            /* Mulai susunan dari atas */
             gap: 2vh 2vw;
             width: 100%;
-            height: 100%;
+            height: auto;
+            /* Ubah dari 100% menjadi auto */
+            padding-bottom: 50px;
+            /* Ruang tambahan agar tombol paling bawah tidak terpotong */
         }
 
         .grid-layout-wide {
