@@ -34,6 +34,7 @@ Route::get('/api/system-status', [AdminDashboard::class, 'getSystemStatusApi'])-
 Route::get('/display', [DisplayController::class, 'index'])->name('display');
 Route::get('/api/display-data', [DisplayController::class, 'getDisplayData'])->name('api.display-data.public');
 
+
 /*
 |--------------------------------------------------------------------------
 | Authentication Routes

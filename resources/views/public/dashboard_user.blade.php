@@ -66,7 +66,10 @@
         }
 
         .services-grid {
-            display: grid;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
             grid-template-columns: repeat(3, 1fr);
             grid-auto-rows: 1fr;
             gap: 2vh 2vw;
@@ -88,6 +91,8 @@
             padding: 2vh 2vw !important;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
+            width: calc(33.333% - 2vw);
+            min-width: 300px;
         }
 
         .card-layanan:hover {
@@ -186,7 +191,11 @@
 
             .services-grid,
             .grid-layout-wide {
-                grid-template-columns: repeat(2, 1fr) !important;
+                /*grid-template-columns: repeat(2, 1fr) !important;*/
+            }
+
+            .grid-layout-wide .card-layanan {
+                width: calc(25% - 2vw) !important;
             }
         }
     </style>
