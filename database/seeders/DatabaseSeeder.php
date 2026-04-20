@@ -34,26 +34,41 @@ class DatabaseSeeder extends Seeder
                 'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan BAKAK.'
             ],
             [
-                'nama_layanan' => 'Pelayanan Adminduk',
+                'nama_layanan' => 'Pelayanan Adminduk Khusus',
                 'prefix' => 'C',
+                'is_nik_required' => true,
+                'icon' => 'fas fa-star',
+                'deskripsi' => 'KK, AKTE Kelahiran, Kematian dan Surat Pindah dengan Surat Kuasa'
+            ],
+            [
+                'nama_layanan' => 'Pelayanan Adminduk',
+                'prefix' => 'D',
                 'is_nik_required' => true,
                 'icon' => 'fas fa-star',
                 'deskripsi' => 'KK, AKTE Kelahiran, Kematian dan Surat Pindah.'
             ],
             [
-                'nama_layanan' => 'Pelayanan KTP dan KIA',
-                'prefix' => 'D',
+                'nama_layanan' => 'Pelayanan Pencetakan KIA',
+                'prefix' => 'E',
                 'is_nik_required' => true,
                 'icon' => 'fas fa-print',
-                'deskripsi' => 'Cetak KTP dan KIA, Perekaman Ulang, Tanda tangan Ulang.'
+                'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan Cetak KIA.'
             ],
             [
                 'nama_layanan' => 'Pelayanan Rekam KTP',
-                'prefix' => 'E',
+                'prefix' => 'F',
                 'is_nik_required' => true,
                 'icon' => 'fas fa-camera-retro',
                 'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan Rekam KTP.'
             ],
+            [
+                'nama_layanan' => 'Pelayanan Pencetakan KTP',
+                'prefix' => 'G',
+                'is_nik_required' => true,
+                'icon' => 'fas fa-camera-retro',
+                'deskripsi' => 'Pengurusan administrasi kependudukan untuk layanan Pelayanan Cetak KTP.'
+            ],
+
         ];
 
         foreach ($layanans as $l) {
@@ -109,7 +124,7 @@ class DatabaseSeeder extends Seeder
             'username' => 'loket4',
             'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
-            'layanan_id' => 3,
+            'layanan_id' => 4,
             'loket_id' => 4
         ]);
 
@@ -118,7 +133,7 @@ class DatabaseSeeder extends Seeder
             'username' => 'loket5',
             'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
-            'layanan_id' => 3,
+            'layanan_id' => 4,
             'loket_id' => 5
         ]);
 
@@ -127,7 +142,7 @@ class DatabaseSeeder extends Seeder
             'username' => 'loket6',
             'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
-            'layanan_id' => 4,
+            'layanan_id' => 5,
             'loket_id' => 6
         ]);
 
@@ -136,8 +151,16 @@ class DatabaseSeeder extends Seeder
             'username' => 'loket7',
             'password' => bcrypt('petugas3328'),
             'role' => 'petugas',
-            'layanan_id' => 5,
+            'layanan_id' => 6,
             'loket_id' => 7
+        ]);
+        User::create([
+            'name' => 'Petugas Loket 8',
+            'username' => 'loket8',
+            'password' => bcrypt('petugas3328'),
+            'role' => 'petugas',
+            'layanan_id' => 7,
+            'loket_id' => 8
         ]);
 
         // 5. Seed Petugas Pengambilan Dokumen

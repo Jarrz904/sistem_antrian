@@ -226,7 +226,7 @@
     <header class="header-monitor">
         <h1 class="title-app">
             <i class="fas fa-circle-nodes me-2 text-primary"></i>
-            MONITOR ANTRIAN TERPADU
+            MONITOR ANTRIAN - {{ strtoupper($lokasi ?? 'TERPADU') }}
         </h1>
         <div class="text-end">
             <div id="clock-time">00:00:00</div>
@@ -247,6 +247,7 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        const lokasiGedung = "{{ $lokasi ?? '' }}";
         let lastTokenMap = {};
         let lastRawData = [];
         let speechQueue = [];
@@ -326,13 +327,16 @@
         }
 
         function updateDisplay() {
-            // Ambil parameter lokasi dari URL, misal: ?lokasi=belakang
-            const urlParams = new URLSearchParams(window.location.search);
-            const lokasiGedung = urlParams.get('lokasi'); // 'depan' atau 'belakang'
-
-            $.get('/api/display-data')
+            // Tambahkan parameter { lokasi: lokasiGedung }
+            $.get('/api/display-data', {
+                    lokasi: lokasiGedung
+                })
                 .done(function(data) {
-                    if (!data || data.length === 0) return;
+                    if (!data || data.length === 0) {
+                        // Opsional: tampilkan pesan jika tidak ada petugas aktif di lokasi ini
+                        $('#antrian-container').html(`<div class="text-center text-muted w-100 mt-5"><h2>MENUNGGU PETUGAS AKTIF...</h2></div>`);
+                        return;
+                    }
                     let hasNewCall = false;
 
                     data.forEach(item => {
@@ -340,6 +344,7 @@
                         const nomorSekarang = item.nomor_antrian;
                         const tokenSekarang = item.updated_token;
 
+                        // Jangan panggil jika nomor masih 000
                         if (item.status === 'dipanggil' && !nomorSekarang.endsWith('000')) {
                             if (lastTokenMap[loketKey] !== tokenSekarang) {
                                 if (audioEnabled) {
@@ -412,7 +417,9 @@
         }
 
         $(document).ready(function() {
-            $.get('/api/display-data', function(data) {
+            $.get('/api/display-data', {
+                lokasi: lokasiGedung
+            }, function(data) {
                 if (data && data.length > 0) {
                     data.forEach(item => {
                         lastTokenMap[item.loket.nama_loket] = item.updated_token;

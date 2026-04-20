@@ -32,6 +32,11 @@ Route::get('/api/system-status', [AdminDashboard::class, 'getSystemStatusApi'])-
 |--------------------------------------------------------------------------
 */
 Route::get('/display', [DisplayController::class, 'index'])->name('display');
+// Halaman View
+Route::get('/display-depan', [DisplayController::class, 'displayDepan'])->name('display.depan');
+Route::get('/display-belakang', [DisplayController::class, 'displayBelakang'])->name('display.belakang');
+
+// API Data (Tetap satu fungsi, tapi menerima parameter)
 Route::get('/api/display-data', [DisplayController::class, 'getDisplayData'])->name('api.display-data.public');
 
 
