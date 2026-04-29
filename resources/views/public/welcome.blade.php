@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Selamat Datang - Sistem Antrian Dukcapil</title>
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
@@ -18,11 +19,12 @@
             --glass-bg: rgba(255, 255, 255, 0.85);
         }
 
-        body, html {
+        body,
+        html {
             height: 100%;
             margin: 0;
             font-family: 'Plus Jakarta Sans', sans-serif;
-            overflow-x: hidden; 
+            overflow-x: hidden;
         }
 
         .full-bg {
@@ -38,9 +40,17 @@
         }
 
         @keyframes gradientMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         .wrapper {
@@ -71,7 +81,7 @@
 
         .card-custom:hover {
             transform: translateY(-15px);
-            box-shadow: 0 30px 60px rgba(0,0,0,0.1) !important;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.1) !important;
         }
 
         .display-4 {
@@ -91,10 +101,12 @@
             margin: 0 auto 25px;
             font-size: clamp(2rem, 4vw, 3rem);
             color: white;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
         }
 
-        .icon-primary { background: linear-gradient(135deg, #007bff, #00d4ff); }
+        .icon-primary {
+            background: linear-gradient(135deg, #007bff, #00d4ff);
+        }
 
         .btn-custom {
             padding: 15px 30px;
@@ -120,14 +132,17 @@
         .swal-huge-popup {
             padding: 3.5rem !important;
             border-radius: 40px !important;
-            width: 850px !important; /* Ukuran lebar yang menutupi konten utama */
+            width: 850px !important;
+            /* Ukuran lebar yang menutupi konten utama */
         }
+
         .swal-huge-title {
             font-size: 3.5rem !important;
             font-weight: 800 !important;
             color: #0f172a !important;
             margin-bottom: 1rem !important;
         }
+
         .swal-huge-content {
             font-size: 1.8rem !important;
             line-height: 1.5 !important;
@@ -135,43 +150,119 @@
             color: #475569 !important;
             margin-bottom: 2rem !important;
         }
+
         .swal-huge-button {
             padding: 20px 60px !important;
             font-size: 1.8rem !important;
             border-radius: 20px !important;
             font-weight: 700 !important;
         }
+
         .swal2-icon.swal2-warning {
-            transform: scale(1.8); /* Memperbesar icon warning sedikit */
+            transform: scale(1.8);
+            /* Memperbesar icon warning sedikit */
             margin-bottom: 2.5rem !important;
         }
 
         @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { 
-                visibility: visible; 
-                color: #000 !important; 
-                font-weight: 800 !important; 
+            body * {
+                visibility: hidden;
             }
-            #printArea { 
-                position: fixed; left: 0; top: 0; width: 100%; 
-                text-align: center; padding: 30px; border: none !important;
+
+            #printArea,
+            #printArea * {
+                visibility: visible;
+                color: #000 !important;
             }
+
+            #printArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 5mm 0;
+                text-align: center !important;
+                min-height: 70mm;
+                display: block;
+            }
+
+            #printArea h1,
+            #printArea p,
+            #printArea hr,
+            #printArea small {
+                width: 100%;
+                display: block;
+                margin-left: auto !important;
+                margin-right: auto !important;
+                text-align: center !important;
+            }
+
+            #printArea h1 {
+                font-size: 40pt !important;
+                /* Sangat besar agar memenuhi lebar */
+                margin: 5mm 0 !important;
+                line-height: 1 !important;
+                font-weight: 800 !important;
+            }
+
+            #printArea p.text-muted {
+                font-size: 12pt !important;
+                margin-bottom: 0 !important;
+                text-transform: uppercase;
+            }
+
+            #printArea p.fw-bold {
+                font-size: 15pt !important;
+                margin-top: 2mm !important;
+            }
+
+            #printArea p.mb-0 {
+                font-size: 14pt !important;
+            }
+
+            /* Memperbesar teks Tanggal/Waktu */
+            #printArea small {
+                font-size: 11pt !important;
+                margin-top: 3mm !important;
+                display: block;
+            }
+
+            #printArea hr {
+                width: 100%;
+                border-top: 2px dashed #000 !important;
+                margin: 4mm 0 !important;
+            }
+
+            /* Pengaturan Kertas Driver */
+            @page {
+                size: 80mm auto;
+                /* Biarkan panjang otomatis tapi minimal 72mm dari CSS di atas */
+                margin: 0;
+            }
+
+
         }
 
         @media (min-width: 992px) {
-            body { overflow: hidden; }
-            .wrapper { padding: 0; }
+            body {
+                overflow: hidden;
+            }
+
+            .wrapper {
+                padding: 0;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <div class="full-bg"></div>
 
     <div class="wrapper">
         <div class="main-container">
-            
+
             <div class="header-section text-center mb-5">
                 <h1 class="display-4 mb-2">Sistem Antrian Publik</h1>
                 <p class="lead text-secondary fw-bold px-3">Pelayanan Cepat, Nyaman, dan Transparan</p>
@@ -186,7 +277,7 @@
                             </div>
                             <h2 class="fw-bold mb-3">Ambil Antrian</h2>
                             <p class="text-secondary mb-4">Daftar secara mandiri untuk mendapatkan nomor urut pelayanan hari ini.</p>
-                            
+
                             <button id="btnMulaiSekarang" class="btn btn-primary-custom btn-custom btn-lg w-100 shadow">
                                 Mulai Sekarang <i class="fas fa-arrow-right ms-2"></i>
                             </button>
@@ -216,13 +307,13 @@
                         <i class="fas fa-check-circle fa-4x"></i>
                     </div>
                     <h3 class="fw-bold">Antrian Berhasil!</h3>
-                    
-                    <div id="printArea" class="border rounded-4 p-3 my-3 bg-light text-center">
-                        <p class="text-muted small mb-1">NOMOR ANTRIAN</p>
-                        <h1 class="display-2 fw-bold text-primary mb-0">{{ session('success_data')['nomor'] }}</h1>
+
+                    <div id="printArea" class="text-center">
+                        <p class="text-muted small">NOMOR ANTRIAN</p>
+                        <h1 class="display-2 fw-bold text-primary">{{ session('success_data')['nomor'] }}</h1>
                         <hr>
-                        <p class="fw-bold mb-0 text-dark">{{ session('success_data')['layanan'] }}</p>
-                        <p class="mb-0 text-dark">{{ session('success_data')['nama'] }}</p>
+                        <p class="fw-bold text-dark">{{ session('success_data')['layanan'] }}</p>
+                        <p class="text-dark">{{ session('success_data')['nama'] }}</p>
                         <small class="text-muted">{{ session('success_data')['tanggal'] }} | {{ session('success_data')['waktu'] }}</small>
                     </div>
 
@@ -244,13 +335,13 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            
+
             @if(session('success_data'))
-                const elModal = document.getElementById('modalSukses');
-                if (elModal) {
-                    const myModal = new bootstrap.Modal(elModal);
-                    myModal.show();
-                }
+            const elModal = document.getElementById('modalSukses');
+            if (elModal) {
+                const myModal = new bootstrap.Modal(elModal);
+                myModal.show();
+            }
             @endif
 
             const btnMulai = document.getElementById('btnMulaiSekarang');
@@ -268,7 +359,7 @@
                                 icon: 'warning',
                                 title: 'Layanan Dihentikan',
                                 text: 'Mohon maaf antrian telah di tutup.',
-                                width: '850px', 
+                                width: '850px',
                                 confirmButtonColor: '#007bff',
                                 confirmButtonText: 'SAYA MENGERTI',
                                 customClass: {
@@ -298,4 +389,5 @@
         });
     </script>
 </body>
+
 </html>
