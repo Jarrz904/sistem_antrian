@@ -176,15 +176,21 @@
             }
 
             #printArea {
-                position: absolute;
+                position: relative;
                 left: 0;
                 top: 0;
                 width: 100%;
-                margin: 0;
+                margin: 0 auto;
+                padding-top: 0;
                 padding: 5mm 0;
                 text-align: center !important;
                 min-height: 70mm;
                 display: block;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
             }
 
             #printArea h1,
