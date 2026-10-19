@@ -185,7 +185,7 @@ class DashboardController extends Controller
     public function antrianIndex(Request $request)
     {
         $query = $this->applyFilters($request);
-        $dataAntrian = $query->latest()->get();
+        $dataAntrian = $query->latest()->paginate(25)->withQueryString();
         $layanans = Layanan::all();
         $users = User::where('role', 'petugas')->get();
 
